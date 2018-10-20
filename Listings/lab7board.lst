@@ -1,0 +1,1568 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000                 AREA             board, CODE, READWRITE
+    2 00000000                 EXPORT           Copy_board
+    3 00000000                 EXPORT           Display_board
+    4 00000000                 EXPORT           Board_array
+    5 00000000                 EXPORT           Board_array_initial
+    6 00000000                 EXPORT           ADD_enemy_s
+    7 00000000                 EXPORT           ADD_enemy_q
+    8 00000000                 EXPORT           update_score
+    9 00000000                 EXPORT           s_died
+   10 00000000                 EXPORT           q_died
+   11 00000000                 EXPORT           p_died
+   12 00000000                 EXPORT           move_enemy
+   13 00000000                 EXPORT           Score_S
+   14 00000000                 IMPORT           output_string
+   15 00000000                 IMPORT           output_character
+   16 00000000                 IMPORT           div_and_mod
+   17 00000000                 IMPORT           sf_status
+   18 00000000                 IMPORT           ss_status
+   19 00000000                 IMPORT           q_status
+   20 00000000                 IMPORT           p_status
+   21 00000000                 IMPORT           p_life
+   22 00000000                 IMPORT           score
+   23 00000000                 IMPORT           lvl_data
+   24 00000000                 IMPORT           stopwatchcounter
+   25 00000000                 IMPORT           binary_conversion_time
+   26 00000000                 IMPORT           random_base
+   27 00000000                 IMPORT           binary_conversion_score
+   28 00000000                 IMPORT           set_enemies_status
+   29 00000000                 IMPORT           illuminateLEDs
+   30 00000000                 IMPORT           Illuminate_RGB_LED
+   31 00000000         
+   32 00000000                 ALIGN
+   33 00000000         
+   34 00000000         ;    [3:0]    [7:4]    [11:8]      [15:12]     [20:16]  
+                          [21]   
+   35 00000000 02020202 
+              02020202 
+              02020202 
+              02020202 
+              02020202 
+              07070702 Board_array
+                               DCD              0x02020202, 0x02020202, 0x02020
+202, 0x02020202, 0x02020202, 0x07070702 
+                                                            ; 0 [Wall]
+   36 00000018 00000002 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              07070702         DCD              0x00000002, 0x00000000, 0x00000
+000, 0x00000000, 0x00000000, 0x07070702 
+                                                            ; 1
+   37 00000030 00000002 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              07070702         DCD              0x00000002, 0x00000000, 0x00000
+000, 0x00000000, 0x00000000, 0x07070702 
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+                                                            ; 2
+   38 00000048 01010102 
+              01010101 
+              01010101 
+              01010101 
+              01010101 
+              07070702         DCD              0x01010102, 0x01010101, 0x01010
+101, 0x01010101, 0x01010101, 0x07070702 
+                                                            ; 3
+   39 00000060 01010102 
+              01010101 
+              01010101 
+              01010101 
+              01010101 
+              07070702         DCD              0x01010102, 0x01010101, 0x01010
+101, 0x01010101, 0x01010101, 0x07070702 
+                                                            ; 4
+   40 00000078 01010102 
+              01010101 
+              01010101 
+              01010101 
+              01010101 
+              07070702         DCD              0x01010102, 0x01010101, 0x01010
+101, 0x01010101, 0x01010101, 0x07070702 
+                                                            ; 5
+   41 00000090 01010102 
+              01010101 
+              01010101 
+              01010101 
+              01010101 
+              07070702         DCD              0x01010102, 0x01010101, 0x01010
+101, 0x01010101, 0x01010101, 0x07070702 
+                                                            ; 6
+   42 000000A8 01010102 
+              01010101 
+              01010101 
+              01010101 
+              01010101 
+              07070702         DCD              0x01010102, 0x01010101, 0x01010
+101, 0x01010101, 0x01010101, 0x07070702 
+                                                            ; 7
+   43 000000C0 01010102 
+              01010101 
+              01030101 
+              01010101 
+              01010101 
+              07070702         DCD              0x01010102, 0x01010101, 0x01030
+101, 0x01010101, 0x01010101, 0x07070702 
+                                                            ; 8
+   44 000000D8 01010102 
+              01010101 
+              01010101 
+              01010101 
+              01010101 
+              07070702         DCD              0x01010102, 0x01010101, 0x01010
+101, 0x01010101, 0x01010101, 0x07070702 
+                                                            ; 9
+   45 000000F0 01010102 
+              01010101 
+
+
+
+ARM Macro Assembler    Page 3 
+
+
+              01010101 
+              01010101 
+              01010101 
+              07070702         DCD              0x01010102, 0x01010101, 0x01010
+101, 0x01010101, 0x01010101, 0x07070702 
+                                                            ; 10
+   46 00000108 01010102 
+              01010101 
+              01010101 
+              01010101 
+              01010101 
+              07070702         DCD              0x01010102, 0x01010101, 0x01010
+101, 0x01010101, 0x01010101, 0x07070702 
+                                                            ; 11
+   47 00000120 01010102 
+              01010101 
+              01010101 
+              01010101 
+              01010101 
+              07070702         DCD              0x01010102, 0x01010101, 0x01010
+101, 0x01010101, 0x01010101, 0x07070702 
+                                                            ; 12
+   48 00000138 01010102 
+              01010101 
+              01010101 
+              01010101 
+              01010101 
+              07070702         DCD              0x01010102, 0x01010101, 0x01010
+101, 0x01010101, 0x01010101, 0x07070702 
+                                                            ; 13
+   49 00000150 01010102 
+              01010101 
+              01010101 
+              01010101 
+              01010101 
+              07070702         DCD              0x01010102, 0x01010101, 0x01010
+101, 0x01010101, 0x01010101, 0x07070702 
+                                                            ; 14
+   50 00000168 01010102 
+              01010101 
+              01010101 
+              01010101 
+              01010101 
+              07070702         DCD              0x01010102, 0x01010101, 0x01010
+101, 0x01010101, 0x01010101, 0x07070702 
+                                                            ; 15
+   51 00000180 02020202 
+              02020202 
+              02020202 
+              02020202 
+              02020202 
+              07070702         DCD              0x02020202, 0x02020202, 0x02020
+202, 0x02020202, 0x02020202, 0x07070702 
+                                                            ;16wall
+   52 00000198         
+   53 00000198                 ALIGN
+   54 00000198         
+   55 00000198         Board_array_initial                  ; 102 words
+   56 00000198 00000000 
+
+
+
+ARM Macro Assembler    Page 4 
+
+
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000         DCD              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+, 0, 0, 0, 0, 0, 0, 0, 0, 0
+   57 000001E8 00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000         DCD              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+, 0, 0, 0, 0, 0, 0, 0, 0, 0
+   58 00000238 00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+
+
+
+ARM Macro Assembler    Page 5 
+
+
+              00000000 
+              00000000         DCD              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+, 0, 0, 0, 0, 0, 0, 0, 0, 0
+   59 00000288 00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000         DCD              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+, 0, 0, 0, 0, 0, 0, 0, 0, 0
+   60 000002D8 00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000         DCD              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+, 0, 0, 0, 0, 0, 0, 0, 0, 0
+   61 00000328 00000000 
+              00000000         DCD              0, 0
+   62 00000330         
+   63 00000330                 ALIGN
+   64 00000330         
+   65 00000330         Status
+   66 00000330 00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+
+
+
+ARM Macro Assembler    Page 6 
+
+
+              00000000 
+              00000000 
+              00000000         DCD              Empty, Dirt, Wall, Right, Left,
+ Top, Bot, unused, Enemy_s, Enemy_q, bullet 
+                                                            ; 0-9
+   67 0000035C 64 69 67 
+              64 75 67 
+              20 0A 0D 
+              00       Title   =                "digdug \n\r", 0
+   68 00000366 54 69 6D 
+              65 20 3A 
+              20 00    Time_S  =                "Time : ", 0
+   69 0000036E 0A 0D 20 
+              53 63 6F 
+              72 65 20 
+              3A 20 00 Score_S =                "\n\r Score : ", 0
+   70 0000037A 0A 0D 20 
+              53 63 6F 
+              72 65 20 
+              3A 20 20 
+              20 20 20 
+              20 20 20 
+              20 20 20 
+              20 20 20 
+              20 20 20 
+              20 50 41 
+              55 53 45 
+              44 00    Score_S_Paused
+                               =                "\n\r Score :                  
+PAUSED", 0
+   71 0000039D 20 00   Empty   =                " ", 0
+   72 0000039F 23 00   Dirt    =                "#", 0
+   73 000003A1 5A 00   Wall    =                "Z", 0
+   74 000003A3 3E 00   Right   =                ">", 0
+   75 000003A5 3C 00   Left    =                "<", 0
+   76 000003A7 5E 00   Top     =                "^", 0
+   77 000003A9 76 00   Bot     =                "v", 0
+   78 000003AB 73 00   Enemy_s =                "s", 0
+   79 000003AD 71 00   Enemy_q =                "q", 0
+   80 000003AF 00      unused  =                "",  0
+   81 000003B0 2E 00   bullet  =                ".", 0
+   82 000003B2 0A 0D 00 
+                       new_line
+                               =                "\n\r", 0
+   83 000003B5         
+   84 000003B5         
+   85 000003B5 00 00 00        ALIGN
+   86 000003B8         
+   87 000003B8         
+   88 000003B8         Copy_board
+   89 000003B8 E92D4000        STMFD            sp!, {lr}
+   90 000003BC E3A00066        MOV              r0, #102
+   91 000003C0         copy_loop
+   92 000003C0 E4941004        LDR              r1, [r4], #4
+   93 000003C4 E4851004        STR              r1, [r5], #4
+   94 000003C8 E2500001        SUBS             r0, r0, #1
+   95 000003CC 1AFFFFFB        BNE              copy_loop
+   96 000003D0 E8BD4000        LDMFD            sp!, {lr}
+   97 000003D4 E12FFF1E        BX               lr
+
+
+
+ARM Macro Assembler    Page 7 
+
+
+   98 000003D8         
+   99 000003D8         Display_board
+  100 000003D8 E92D4000        STMFD            sp!, {lr}
+  101 000003DC E3A00003        MOV              r0, #3
+  102 000003E0 EBFFFFFE        BL               Illuminate_RGB_LED
+  103 000003E4 E59F44F4        LDR              r4, =Title
+  104 000003E8 EBFFFFFE        BL               output_string
+  105 000003EC E59F44F0        LDR              r4, =Time_S
+  106 000003F0 EBFFFFFE        BL               output_string
+  107 000003F4 E59F44EC        LDR              r4, =stopwatchcounter
+  108 000003F8 E5940000        LDR              r0, [r4]
+  109 000003FC EBFFFFFE        BL               binary_conversion_time
+  110 00000400 E59F44E4        LDR              r4, =Score_S
+  111 00000404 EBFFFFFE        BL               output_string
+  112 00000408 E59F44E0        LDR              r4, =score
+  113 0000040C E5940000        LDR              r0, [r4]
+  114 00000410 EBFFFFFE        BL               binary_conversion_score
+  115 00000414         
+  116 00000414 E3E07017        MOV              r7, #-24
+  117 00000418 E3E00000        MOV              r0, #-1
+  118 0000041C E59F54D0        LDR              r5, = Board_array
+  119 00000420 E59F64D0        LDR              r6, = Status
+  120 00000424         loop_board_1
+  121 00000424 E59F44D0        LDR              r4,= new_line
+  122 00000428 E92D0001        STMFD            sp!, {r0}
+  123 0000042C EBFFFFFE        BL               output_string
+  124 00000430 E8BD0001        LDMFD            sp!, {r0}
+  125 00000434 E2800001        ADD              r0, r0, #1
+  126 00000438 E3500011        CMP              r0, #17
+  127 0000043C 0A00000A        BEQ              quit_board
+  128 00000440 E3A01014        MOV              r1, #20
+  129 00000444 E2877018        ADD              r7, r7, #24
+  130 00000448         loop_board_2
+  131 00000448 E0873001        ADD              r3, r7, r1
+  132 0000044C E7D52003        LDRB             r2, [r5, r3]
+  133 00000450 E7964102        LDR              r4, [r6, r2, LSL #2]
+  134 00000454 E92D0003        STMFD            sp!, {r0, r1}
+  135 00000458 EBFFFFFE        BL               output_string
+  136 0000045C E8BD0003        LDMFD            sp!, {r0, r1}
+  137 00000460 E2511001        SUBS             r1, r1 , #1
+  138 00000464 BAFFFFEE        BLT              loop_board_1
+  139 00000468 EAFFFFF6        B                loop_board_2
+  140 0000046C         quit_board
+  141 0000046C E8BD4000        LDMFD            sp!, {lr}
+  142 00000470 E12FFF1E        BX               lr
+  143 00000474         
+  144 00000474         ADD_enemy_s
+  145 00000474 E92D4000        STMFD            sp!, {lr}
+  146 00000478 E3A00002        MOV              r0, #2
+  147 0000047C         as_loop
+  148 0000047C EB00004E        BL               random_generator
+  149 00000480 E35100C9        CMP              r1, #201
+  150 00000484 0AFFFFFC        BEQ              as_loop
+  151 00000488 E35100C8        CMP              r1, #200
+  152 0000048C 0AFFFFFA        BEQ              as_loop
+  153 00000490 E35100CC        CMP              r1, #204
+  154 00000494 0AFFFFF8        BEQ              as_loop
+  155 00000498 E35100CB        CMP              r1, #203
+  156 0000049C 0AFFFFF6        BEQ              as_loop
+
+
+
+ARM Macro Assembler    Page 8 
+
+
+  157 000004A0 E35100B2        CMP              r1, #178
+  158 000004A4 0AFFFFF4        BEQ              as_loop
+  159 000004A8 E35100B1        CMP              r1, #177
+  160 000004AC 0AFFFFF2        BEQ              as_loop
+  161 000004B0 E35100B3        CMP              r1, #179
+  162 000004B4 0AFFFFF0        BEQ              as_loop
+  163 000004B8 E35100E2        CMP              r1, #226
+  164 000004BC 0AFFFFEE        BEQ              as_loop
+  165 000004C0 E35100E1        CMP              r1, #225
+  166 000004C4 0AFFFFEC        BEQ              as_loop
+  167 000004C8 E35100E3        CMP              r1, #227
+  168 000004CC 0AFFFFEA        BEQ              as_loop
+  169 000004D0 E59F441C        LDR              r4,= Board_array
+  170 000004D4 E7D43001        LDRB             r3, [r4,r1]
+  171 000004D8 E3530001        CMP              r3, #0x01
+  172 000004DC 1AFFFFE6        BNE              as_loop
+  173 000004E0 E3A03008        MOV              r3, #0x08
+  174 000004E4 E7E43001        STRB             r3, [r4, r1]!
+  175 000004E8 E3A03000        MOV              r3, #0x00
+  176 000004EC E5D42001        LDRB             r2, [r4, #1]
+  177 000004F0 E3520001        CMP              r2, #0x01
+  178 000004F4 1A000000        BNE              s_left
+  179 000004F8 E5C43001        STRB             r3, [r4, #1]
+  180 000004FC         s_left
+  181 000004FC E5542001        LDRB             r2, [r4, #-1]
+  182 00000500 E3520001        CMP              r2, #0x01
+  183 00000504 1A000000        BNE              s_tail
+  184 00000508 E5443001        STRB             r3, [r4, #-1]
+  185 0000050C         s_tail
+  186 0000050C E2400001        SUB              r0, r0, #1
+  187 00000510 E3500000        CMP              r0, #0
+  188 00000514 1AFFFFD8        BNE              as_loop
+  189 00000518 E8BD4000        LDMFD            sp!, {lr}
+  190 0000051C E12FFF1E        BX               lr
+  191 00000520         
+  192 00000520         ADD_enemy_q
+  193 00000520 E92D4000        STMFD            sp!, {lr}
+  194 00000524         aq_loop
+  195 00000524 EB000024        BL               random_generator
+  196 00000528 E35100C9        CMP              r1, #201
+  197 0000052C 0AFFFFFC        BEQ              aq_loop
+  198 00000530 E35100C8        CMP              r1, #200
+  199 00000534 0AFFFFFA        BEQ              aq_loop
+  200 00000538 E35100CC        CMP              r1, #204
+  201 0000053C 0AFFFFF8        BEQ              aq_loop
+  202 00000540 E35100CB        CMP              r1, #203
+  203 00000544 0AFFFFF6        BEQ              aq_loop
+  204 00000548 E35100B2        CMP              r1, #178
+  205 0000054C 0AFFFFF4        BEQ              aq_loop
+  206 00000550 E35100B1        CMP              r1, #177
+  207 00000554 0AFFFFF2        BEQ              aq_loop
+  208 00000558 E35100B3        CMP              r1, #179
+  209 0000055C 0AFFFFF0        BEQ              aq_loop
+  210 00000560 E35100E2        CMP              r1, #226
+  211 00000564 0AFFFFEE        BEQ              aq_loop
+  212 00000568 E35100E1        CMP              r1, #225
+  213 0000056C 0AFFFFEC        BEQ              aq_loop
+  214 00000570 E35100E3        CMP              r1, #227
+  215 00000574 0AFFFFEA        BEQ              aq_loop
+
+
+
+ARM Macro Assembler    Page 9 
+
+
+  216 00000578 E59F4374        LDR              r4,= Board_array
+  217 0000057C E7D43001        LDRB             r3, [r4,r1]
+  218 00000580 E3530001        CMP              r3, #0x01
+  219 00000584 1AFFFFE6        BNE              aq_loop
+  220 00000588 E3A03009        MOV              r3, #0x09
+  221 0000058C E7E43001        STRB             r3, [r4, r1]!
+  222 00000590 E3A03000        MOV              r3, #0x00
+  223 00000594 E5D42001        LDRB             r2, [r4, #1]
+  224 00000598 E3520001        CMP              r2, #0x01
+  225 0000059C 1A000000        BNE              q_left
+  226 000005A0 E5C43001        STRB             r3, [r4, #1]
+  227 000005A4         q_left
+  228 000005A4 E5542001        LDRB             r2, [r4, #-1]
+  229 000005A8 E3520001        CMP              r2, #0x01
+  230 000005AC 1A000000        BNE              q_tail
+  231 000005B0 E5443001        STRB             r3, [r4, #-1]
+  232 000005B4         q_tail
+  233 000005B4 E8BD4000        LDMFD            sp!, {lr}
+  234 000005B8 E12FFF1E        BX               lr
+  235 000005BC         
+  236 000005BC         random_generator
+  237 000005BC E92D4011        STMFD            sp!, {r0,r4,lr}
+  238 000005C0 E3500002        CMP              r0, #2
+  239 000005C4 0A000003        BEQ              set_sf
+  240 000005C8 E3500001        CMP              r0, #1
+  241 000005CC 0A000009        BEQ              set_ss
+  242 000005D0 E3500000        CMP              r0, #0
+  243 000005D4 0A00000F        BEQ              set_q
+  244 000005D8         set_sf
+  245 000005D8 E59F1320        LDR              r1, =0xE0008008 ;getting random
+                                                             character
+  246 000005DC E1D100B0        LDRH             r0, [r1]
+  247 000005E0 E3A010C8        MOV              r1, #200
+  248 000005E4 E28110D0        ADD              r1, r1, #208
+  249 000005E8 EBFFFFFE        BL               div_and_mod
+  250 000005EC E59F4310        LDR              r4,= sf_status
+  251 000005F0 E5841000        STR              r1, [r4]
+  252 000005F4 EA00000F        B                r_done
+  253 000005F8         set_ss
+  254 000005F8 E59F1300        LDR              r1, =0xE0008008 ;getting random
+                                                             character
+  255 000005FC E1D100B0        LDRH             r0, [r1]
+  256 00000600 E3A010C8        MOV              r1, #200
+  257 00000604 E28110D0        ADD              r1, r1, #208
+  258 00000608 EBFFFFFE        BL               div_and_mod
+  259 0000060C E59F42F4        LDR              r4,= ss_status
+  260 00000610 E5841000        STR              r1, [r4]
+  261 00000614 EA000007        B                r_done
+  262 00000618         set_q
+  263 00000618 E59F12E0        LDR              r1, =0xE0008008 ;getting random
+                                                             character
+  264 0000061C E1D100B0        LDRH             r0, [r1]
+  265 00000620 E3A010C8        MOV              r1, #200
+  266 00000624 E28110D0        ADD              r1, r1, #208
+  267 00000628 EBFFFFFE        BL               div_and_mod
+  268 0000062C E59F42D8        LDR              r4,= q_status
+  269 00000630 E5841000        STR              r1, [r4]
+  270 00000634 EAFFFFFF        B                r_done
+  271 00000638         r_done
+
+
+
+ARM Macro Assembler    Page 10 
+
+
+  272 00000638 E8BD4011        LDMFD            sp!, {r0, r4,lr}
+  273 0000063C E12FFF1E        BX               lr
+  274 00000640         
+  275 00000640         update_score
+  276 00000640 E92D5FFF        STMFD            sp!, {r0-r12, lr}
+  277 00000644 E59F42A4        LDR              r4,= score
+  278 00000648 E5940000        LDR              r0, [r4]
+  279 0000064C E3510008        CMP              r1, #8
+  280 00000650 02800032        ADDEQ            r0, r0, #50
+  281 00000654 C2800064        ADDGT            r0, r0, #100
+  282 00000658 B280000A        ADDLT            r0, r0, #10
+  283 0000065C E5840000        STR              r0, [r4]
+  284 00000660 E8BD5FFF        LDMFD            sp!, {r0-r12, lr}
+  285 00000664 E12FFF1E        BX               lr
+  286 00000668         
+  287 00000668         s_died
+  288 00000668 E92D5FFF        STMFD            sp!, {r0-r12,lr}
+  289 0000066C E59F4290        LDR              r4,= sf_status ;check if it is 
+                                                            s1 or s2 in the loc
+                                                            ation 
+  290 00000670 E5942000        LDR              r2,[r4]
+  291 00000674 E3A03000        MOV              r3, #0
+  292 00000678 E1520005        CMP              r2, r5
+  293 0000067C 05843000        STREQ            r3, [r4]    ;set status to 0 if
+                                                             it is s1
+  294 00000680 0A000001        BEQ              sd_done
+  295 00000684 E59F427C        LDR              r4,= ss_status
+  296 00000688 E5843000        STR              r3, [r4]
+  297 0000068C         sd_done
+  298 0000068C E59F5260        LDR              r5,= Board_array
+  299 00000690 E5C03000        STRB             r3, [r0]
+  300 00000694 EBFFFFFE        BL               update_score
+  301 00000698 EBFFFFFE        BL               set_enemies_status
+  302 0000069C E8BD5FFF        LDMFD            sp!, {r0-r12,lr}
+  303 000006A0 E12FFF1E        BX               lr
+  304 000006A4         
+  305 000006A4         q_died
+  306 000006A4 E92D5FFF        STMFD            sp!, {r0-r12,lr}
+  307 000006A8 E59F425C        LDR              r4,= q_status
+  308 000006AC E3A03000        MOV              r3, #0
+  309 000006B0 E5C03000        STRB             r3, [r0]
+  310 000006B4 E5843000        STR              r3, [r4]
+  311 000006B8 EBFFFFFE        BL               update_score
+  312 000006BC EBFFFFFE        BL               set_enemies_status
+  313 000006C0 E8BD5FFF        LDMFD            sp!, {r0-r12,lr}
+  314 000006C4 E12FFF1E        BX               lr
+  315 000006C8         
+  316 000006C8         p_died
+  317 000006C8 E92D5FFF        STMFD            sp!, {r0-r12,lr}
+  318 000006CC E3A01000        MOV              r1, #0
+  319 000006D0 E5C51000        STRB             r1, [r5]
+  320 000006D4 E3A01003        MOV              r1, #3
+  321 000006D8 E3A000CA        MOV              r0, #202
+  322 000006DC E59F5210        LDR              r5, =Board_array
+  323 000006E0 E7C51000        STRB             r1, [r5, r0]
+  324 000006E4 E59F4224        LDR              r4,= p_status
+  325 000006E8 E3A000CA        MOV              r0, #202
+  326 000006EC E5840000        STR              r0, [r4]
+  327 000006F0 E59F421C        LDR              r4,= p_life
+
+
+
+ARM Macro Assembler    Page 11 
+
+
+  328 000006F4 E5940000        LDR              r0, [r4]
+  329 000006F8 E1A000A0        MOV              r0, r0, LSR #1
+  330 000006FC E5840000        STR              r0, [r4]
+  331 00000700 EBFFFFFE        BL               illuminateLEDs
+  332 00000704 E59F4208        LDR              r4,= p_life
+  333 00000708 E5940000        LDR              r0, [r4]
+  334 0000070C E3500000        CMP              r0, #0
+  335 00000710 CA000005        BGT              p_still_have_life
+  336 00000714 E59F41E4        LDR              r4, =0xE0008008
+  337 00000718 E5940000        LDR              r0, [r4]
+  338 0000071C         ;Setup Match Register 2 for Timer1(MR1)
+  339 0000071C E3A01707        LDR              r1, =0x001C0000 
+                                                            ;less than 0.1sec
+  340 00000720 E0800001        ADD              r0, r0, r1
+  341 00000724 E59F41EC        LDR              r4, =0xE0008020
+  342 00000728 E5840000        STR              r0, [r4]
+  343 0000072C         p_still_have_life
+  344 0000072C E8BD5FFF        LDMFD            sp!, {r0-r12,lr}
+  345 00000730 E12FFF1E        BX               lr
+  346 00000734         
+  347 00000734         move_enemy
+  348 00000734 E92D5FFC        STMFD            sp!, {r2-r12,lr}
+  349 00000738 E3510001        CMP              r1, #1
+  350 0000073C 0A00001B        BEQ              e_left
+  351 00000740 E3510002        CMP              r1, #2
+  352 00000744 0A00002A        BEQ              e_right
+  353 00000748 E3510003        CMP              r1, #3
+  354 0000074C 0A000039        BEQ              e_up
+  355 00000750 E3510004        CMP              r1, #4
+  356 00000754 0A00004B        BEQ              e_down
+  357 00000758         e_loop
+  358 00000758 E59F11B0        LDR              r1, =p_status ;getting random c
+                                                            haracter
+  359 0000075C E1D100B0        LDRH             r0, [r1]
+  360 00000760 E59F41B4        LDR              r4,= random_base
+  361 00000764 E5941000        LDR              r1, [r4]
+  362 00000768 E2811001        ADD              r1, r1, #1
+  363 0000076C E3510FFA        CMP              r1, #1000
+  364 00000770 03A01001        MOVEQ            r1, #1
+  365 00000774 E5841000        STR              r1, [r4]
+  366 00000778 E0800001        ADD              r0, r0, r1
+  367 0000077C E59F417C        LDR              r4, =0xE0008008 ;getting random
+                                                             character
+  368 00000780 E5D41000        LDRB             r1, [r4]
+  369 00000784 E0800001        ADD              r0, r0, r1
+  370 00000788 E3A0100E        MOV              r1, #14
+  371 0000078C EBFFFFFE        BL               div_and_mod
+  372 00000790 E3510003        CMP              r1, #3
+  373 00000794 BA000016        BLT              e_right
+  374 00000798 E3510006        CMP              r1, #6
+  375 0000079C BA000003        BLT              e_left
+  376 000007A0 E351000A        CMP              r1, #10
+  377 000007A4 BA000023        BLT              e_up
+  378 000007A8 E351000E        CMP              r1, #14
+  379 000007AC BA000035        BLT              e_down
+  380 000007B0         
+  381 000007B0         e_left
+  382 000007B0 E59F513C        LDR              r5,= Board_array
+  383 000007B4 E0855002        ADD              r5, r5, r2
+
+
+
+ARM Macro Assembler    Page 12 
+
+
+  384 000007B8 E5F51001        LDRB             r1, [r5, #1]!
+  385 000007BC E3510003        CMP              r1, #3
+  386 000007C0 BA000004        BLT              empty_left
+  387 000007C4 E3510006        CMP              r1, #6
+  388 000007C8 CA000002        BGT              empty_left
+  389 000007CC EBFFFFFE        BL               p_died
+  390 000007D0 E3A01002        MOV              r1, #2
+  391 000007D4 EA000006        B                e_right
+  392 000007D8         empty_left
+  393 000007D8 E3510000        CMP              r1, #0
+  394 000007DC 1AFFFFDD        BNE              e_loop
+  395 000007E0 E5550001        LDRB             r0, [r5,#-1]
+  396 000007E4 E5451001        STRB             r1, [r5,#-1]
+  397 000007E8 E5C50000        STRB             r0, [r5]
+  398 000007EC E3A01001        MOV              r1, #1
+  399 000007F0 EA000035        B                e_done
+  400 000007F4         
+  401 000007F4         e_right
+  402 000007F4 E59F50F8        LDR              r5,= Board_array
+  403 000007F8 E0855002        ADD              r5, r5, r2
+  404 000007FC E5751001        LDRB             r1, [r5, #-1]!
+  405 00000800 E3510003        CMP              r1, #3
+  406 00000804 BA000004        BLT              empty_right
+  407 00000808 E3510006        CMP              r1, #6
+  408 0000080C CA000002        BGT              empty_right
+  409 00000810 EBFFFFFE        BL               p_died
+  410 00000814 E3A01001        MOV              r1, #1
+  411 00000818 EAFFFFE4        B                e_left
+  412 0000081C         empty_right
+  413 0000081C E3510000        CMP              r1, #0
+  414 00000820 1AFFFFCC        BNE              e_loop
+  415 00000824 E5D50001        LDRB             r0, [r5, #1]
+  416 00000828 E5C51001        STRB             r1, [r5, #1]
+  417 0000082C E5C50000        STRB             r0, [r5]
+  418 00000830 E3A01002        MOV              r1, #2
+  419 00000834 EA000024        B                e_done
+  420 00000838         
+  421 00000838         e_up
+  422 00000838 E2424018        SUB              r4, r2, #24
+  423 0000083C E3540030        CMP              r4, #48
+  424 00000840 DAFFFFC4        BLE              e_loop
+  425 00000844 E59F50A8        LDR              r5,= Board_array
+  426 00000848 E0855002        ADD              r5, r5, r2
+  427 0000084C E5751018        LDRB             r1, [r5, #-24]!
+  428 00000850 E3510003        CMP              r1, #3
+  429 00000854 BA000004        BLT              empty_top
+  430 00000858 E3510006        CMP              r1, #6
+  431 0000085C CA000002        BGT              empty_top
+  432 00000860 EBFFFFFE        BL               p_died
+  433 00000864 E3A01004        MOV              r1, #4
+  434 00000868 EA000006        B                e_down
+  435 0000086C         empty_top
+  436 0000086C E3510000        CMP              r1, #0
+  437 00000870 1AFFFFB8        BNE              e_loop
+  438 00000874 E5D50018        LDRB             r0, [r5, #24]
+  439 00000878 E5C51018        STRB             r1, [r5, #24]
+  440 0000087C E5C50000        STRB             r0, [r5]
+  441 00000880 E3A01003        MOV              r1, #3
+  442 00000884 EA000010        B                e_done
+
+
+
+ARM Macro Assembler    Page 13 
+
+
+  443 00000888         
+  444 00000888         e_down
+  445 00000888 E59F5064        LDR              r5,= Board_array
+  446 0000088C E0855002        ADD              r5, r5, r2
+  447 00000890 E5F51018        LDRB             r1, [r5, #24]!
+  448 00000894 E3510003        CMP              r1, #3
+  449 00000898 BA000004        BLT              empty_bot
+  450 0000089C E3510006        CMP              r1, #6
+  451 000008A0 CA000002        BGT              empty_bot
+  452 000008A4 EBFFFFFE        BL               p_died
+  453 000008A8 E3A01003        MOV              r1, #3
+  454 000008AC EAFFFFE1        B                e_up
+  455 000008B0         empty_bot
+  456 000008B0 E3510000        CMP              r1, #0
+  457 000008B4 1AFFFFA7        BNE              e_loop
+  458 000008B8 E5550018        LDRB             r0, [r5, #-24]
+  459 000008BC E5451018        STRB             r1, [r5, #-24]
+  460 000008C0 E5C50000        STRB             r0, [r5]
+  461 000008C4 E3A01004        MOV              r1, #4
+  462 000008C8 EAFFFFFF        B                e_done
+  463 000008CC         e_done
+  464 000008CC E1A00005        MOV              r0, r5
+  465 000008D0 E59F501C        LDR              r5,= Board_array
+  466 000008D4 E0400005        SUB              r0, r0, r5
+  467 000008D8 E8BD5FFC        LDMFD            sp!, {r2-r12,lr}
+  468 000008DC E12FFF1E        BX               lr
+  469 000008E0         
+  470 000008E0                 END
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              E0008008 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              E0008020 
+              00000000 
+Command Line: --debug --xref --diag_suppress=9931 --apcs=interwork --depend=.\o
+bjects\lab7board.d -o.\objects\lab7board.o -IC:\Keil_v5\ARM\RV31\INC -IC:\Keil_
+v5\ARM\CMSIS\Include -IC:\Keil_v5\ARM\Inc\Philips --predefine="__EVAL SETA 1" -
+-predefine="__UVISION_VERSION SETA 522" --list=.\listings\lab7board.lst lab7boa
+rd.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+ADD_enemy_q 00000520
+
+Symbol: ADD_enemy_q
+   Definitions
+      At line 192 in file lab7board.s
+   Uses
+      At line 7 in file lab7board.s
+Comment: ADD_enemy_q used once
+ADD_enemy_s 00000474
+
+Symbol: ADD_enemy_s
+   Definitions
+      At line 144 in file lab7board.s
+   Uses
+      At line 6 in file lab7board.s
+Comment: ADD_enemy_s used once
+Board_array 00000000
+
+Symbol: Board_array
+   Definitions
+      At line 35 in file lab7board.s
+   Uses
+      At line 4 in file lab7board.s
+      At line 118 in file lab7board.s
+      At line 169 in file lab7board.s
+      At line 216 in file lab7board.s
+      At line 298 in file lab7board.s
+      At line 322 in file lab7board.s
+      At line 382 in file lab7board.s
+      At line 402 in file lab7board.s
+      At line 425 in file lab7board.s
+      At line 445 in file lab7board.s
+      At line 465 in file lab7board.s
+
+Board_array_initial 00000198
+
+Symbol: Board_array_initial
+   Definitions
+      At line 55 in file lab7board.s
+   Uses
+      At line 5 in file lab7board.s
+Comment: Board_array_initial used once
+Bot 000003A9
+
+Symbol: Bot
+   Definitions
+      At line 77 in file lab7board.s
+   Uses
+      At line 66 in file lab7board.s
+Comment: Bot used once
+Copy_board 000003B8
+
+Symbol: Copy_board
+   Definitions
+      At line 88 in file lab7board.s
+   Uses
+      At line 2 in file lab7board.s
+Comment: Copy_board used once
+Dirt 0000039F
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Relocatable symbols
+
+
+Symbol: Dirt
+   Definitions
+      At line 72 in file lab7board.s
+   Uses
+      At line 66 in file lab7board.s
+Comment: Dirt used once
+Display_board 000003D8
+
+Symbol: Display_board
+   Definitions
+      At line 99 in file lab7board.s
+   Uses
+      At line 3 in file lab7board.s
+Comment: Display_board used once
+Empty 0000039D
+
+Symbol: Empty
+   Definitions
+      At line 71 in file lab7board.s
+   Uses
+      At line 66 in file lab7board.s
+Comment: Empty used once
+Enemy_q 000003AD
+
+Symbol: Enemy_q
+   Definitions
+      At line 79 in file lab7board.s
+   Uses
+      At line 66 in file lab7board.s
+Comment: Enemy_q used once
+Enemy_s 000003AB
+
+Symbol: Enemy_s
+   Definitions
+      At line 78 in file lab7board.s
+   Uses
+      At line 66 in file lab7board.s
+Comment: Enemy_s used once
+Left 000003A5
+
+Symbol: Left
+   Definitions
+      At line 75 in file lab7board.s
+   Uses
+      At line 66 in file lab7board.s
+Comment: Left used once
+Right 000003A3
+
+Symbol: Right
+   Definitions
+      At line 74 in file lab7board.s
+   Uses
+      At line 66 in file lab7board.s
+Comment: Right used once
+Score_S 0000036E
+
+Symbol: Score_S
+   Definitions
+
+
+
+ARM Macro Assembler    Page 3 Alphabetic symbol ordering
+Relocatable symbols
+
+      At line 69 in file lab7board.s
+   Uses
+      At line 13 in file lab7board.s
+      At line 110 in file lab7board.s
+
+Score_S_Paused 0000037A
+
+Symbol: Score_S_Paused
+   Definitions
+      At line 70 in file lab7board.s
+   Uses
+      None
+Comment: Score_S_Paused unused
+Status 00000330
+
+Symbol: Status
+   Definitions
+      At line 65 in file lab7board.s
+   Uses
+      At line 119 in file lab7board.s
+Comment: Status used once
+Time_S 00000366
+
+Symbol: Time_S
+   Definitions
+      At line 68 in file lab7board.s
+   Uses
+      At line 105 in file lab7board.s
+Comment: Time_S used once
+Title 0000035C
+
+Symbol: Title
+   Definitions
+      At line 67 in file lab7board.s
+   Uses
+      At line 103 in file lab7board.s
+Comment: Title used once
+Top 000003A7
+
+Symbol: Top
+   Definitions
+      At line 76 in file lab7board.s
+   Uses
+      At line 66 in file lab7board.s
+Comment: Top used once
+Wall 000003A1
+
+Symbol: Wall
+   Definitions
+      At line 73 in file lab7board.s
+   Uses
+      At line 66 in file lab7board.s
+Comment: Wall used once
+aq_loop 00000524
+
+Symbol: aq_loop
+   Definitions
+      At line 194 in file lab7board.s
+   Uses
+
+
+
+ARM Macro Assembler    Page 4 Alphabetic symbol ordering
+Relocatable symbols
+
+      At line 197 in file lab7board.s
+      At line 199 in file lab7board.s
+      At line 201 in file lab7board.s
+      At line 203 in file lab7board.s
+      At line 205 in file lab7board.s
+      At line 207 in file lab7board.s
+      At line 209 in file lab7board.s
+      At line 211 in file lab7board.s
+      At line 213 in file lab7board.s
+      At line 215 in file lab7board.s
+      At line 219 in file lab7board.s
+
+as_loop 0000047C
+
+Symbol: as_loop
+   Definitions
+      At line 147 in file lab7board.s
+   Uses
+      At line 150 in file lab7board.s
+      At line 152 in file lab7board.s
+      At line 154 in file lab7board.s
+      At line 156 in file lab7board.s
+      At line 158 in file lab7board.s
+      At line 160 in file lab7board.s
+      At line 162 in file lab7board.s
+      At line 164 in file lab7board.s
+      At line 166 in file lab7board.s
+      At line 168 in file lab7board.s
+      At line 172 in file lab7board.s
+      At line 188 in file lab7board.s
+
+board 00000000
+
+Symbol: board
+   Definitions
+      At line 1 in file lab7board.s
+   Uses
+      None
+Comment: board unused
+bullet 000003B0
+
+Symbol: bullet
+   Definitions
+      At line 81 in file lab7board.s
+   Uses
+      At line 66 in file lab7board.s
+Comment: bullet used once
+copy_loop 000003C0
+
+Symbol: copy_loop
+   Definitions
+      At line 91 in file lab7board.s
+   Uses
+      At line 95 in file lab7board.s
+Comment: copy_loop used once
+e_done 000008CC
+
+Symbol: e_done
+   Definitions
+
+
+
+ARM Macro Assembler    Page 5 Alphabetic symbol ordering
+Relocatable symbols
+
+      At line 463 in file lab7board.s
+   Uses
+      At line 399 in file lab7board.s
+      At line 419 in file lab7board.s
+      At line 442 in file lab7board.s
+      At line 462 in file lab7board.s
+
+e_down 00000888
+
+Symbol: e_down
+   Definitions
+      At line 444 in file lab7board.s
+   Uses
+      At line 356 in file lab7board.s
+      At line 379 in file lab7board.s
+      At line 434 in file lab7board.s
+
+e_left 000007B0
+
+Symbol: e_left
+   Definitions
+      At line 381 in file lab7board.s
+   Uses
+      At line 350 in file lab7board.s
+      At line 375 in file lab7board.s
+      At line 411 in file lab7board.s
+
+e_loop 00000758
+
+Symbol: e_loop
+   Definitions
+      At line 357 in file lab7board.s
+   Uses
+      At line 394 in file lab7board.s
+      At line 414 in file lab7board.s
+      At line 424 in file lab7board.s
+      At line 437 in file lab7board.s
+      At line 457 in file lab7board.s
+
+e_right 000007F4
+
+Symbol: e_right
+   Definitions
+      At line 401 in file lab7board.s
+   Uses
+      At line 352 in file lab7board.s
+      At line 373 in file lab7board.s
+      At line 391 in file lab7board.s
+
+e_up 00000838
+
+Symbol: e_up
+   Definitions
+      At line 421 in file lab7board.s
+   Uses
+      At line 354 in file lab7board.s
+      At line 377 in file lab7board.s
+      At line 454 in file lab7board.s
+
+
+
+
+ARM Macro Assembler    Page 6 Alphabetic symbol ordering
+Relocatable symbols
+
+empty_bot 000008B0
+
+Symbol: empty_bot
+   Definitions
+      At line 455 in file lab7board.s
+   Uses
+      At line 449 in file lab7board.s
+      At line 451 in file lab7board.s
+
+empty_left 000007D8
+
+Symbol: empty_left
+   Definitions
+      At line 392 in file lab7board.s
+   Uses
+      At line 386 in file lab7board.s
+      At line 388 in file lab7board.s
+
+empty_right 0000081C
+
+Symbol: empty_right
+   Definitions
+      At line 412 in file lab7board.s
+   Uses
+      At line 406 in file lab7board.s
+      At line 408 in file lab7board.s
+
+empty_top 0000086C
+
+Symbol: empty_top
+   Definitions
+      At line 435 in file lab7board.s
+   Uses
+      At line 429 in file lab7board.s
+      At line 431 in file lab7board.s
+
+loop_board_1 00000424
+
+Symbol: loop_board_1
+   Definitions
+      At line 120 in file lab7board.s
+   Uses
+      At line 138 in file lab7board.s
+Comment: loop_board_1 used once
+loop_board_2 00000448
+
+Symbol: loop_board_2
+   Definitions
+      At line 130 in file lab7board.s
+   Uses
+      At line 139 in file lab7board.s
+Comment: loop_board_2 used once
+move_enemy 00000734
+
+Symbol: move_enemy
+   Definitions
+      At line 347 in file lab7board.s
+   Uses
+      At line 12 in file lab7board.s
+
+
+
+ARM Macro Assembler    Page 7 Alphabetic symbol ordering
+Relocatable symbols
+
+Comment: move_enemy used once
+new_line 000003B2
+
+Symbol: new_line
+   Definitions
+      At line 82 in file lab7board.s
+   Uses
+      At line 121 in file lab7board.s
+Comment: new_line used once
+p_died 000006C8
+
+Symbol: p_died
+   Definitions
+      At line 316 in file lab7board.s
+   Uses
+      At line 11 in file lab7board.s
+      At line 389 in file lab7board.s
+      At line 409 in file lab7board.s
+      At line 432 in file lab7board.s
+      At line 452 in file lab7board.s
+
+p_still_have_life 0000072C
+
+Symbol: p_still_have_life
+   Definitions
+      At line 343 in file lab7board.s
+   Uses
+      At line 335 in file lab7board.s
+Comment: p_still_have_life used once
+q_died 000006A4
+
+Symbol: q_died
+   Definitions
+      At line 305 in file lab7board.s
+   Uses
+      At line 10 in file lab7board.s
+Comment: q_died used once
+q_left 000005A4
+
+Symbol: q_left
+   Definitions
+      At line 227 in file lab7board.s
+   Uses
+      At line 225 in file lab7board.s
+Comment: q_left used once
+q_tail 000005B4
+
+Symbol: q_tail
+   Definitions
+      At line 232 in file lab7board.s
+   Uses
+      At line 230 in file lab7board.s
+Comment: q_tail used once
+quit_board 0000046C
+
+Symbol: quit_board
+   Definitions
+      At line 140 in file lab7board.s
+   Uses
+
+
+
+ARM Macro Assembler    Page 8 Alphabetic symbol ordering
+Relocatable symbols
+
+      At line 127 in file lab7board.s
+Comment: quit_board used once
+r_done 00000638
+
+Symbol: r_done
+   Definitions
+      At line 271 in file lab7board.s
+   Uses
+      At line 252 in file lab7board.s
+      At line 261 in file lab7board.s
+      At line 270 in file lab7board.s
+
+random_generator 000005BC
+
+Symbol: random_generator
+   Definitions
+      At line 236 in file lab7board.s
+   Uses
+      At line 148 in file lab7board.s
+      At line 195 in file lab7board.s
+
+s_died 00000668
+
+Symbol: s_died
+   Definitions
+      At line 287 in file lab7board.s
+   Uses
+      At line 9 in file lab7board.s
+Comment: s_died used once
+s_left 000004FC
+
+Symbol: s_left
+   Definitions
+      At line 180 in file lab7board.s
+   Uses
+      At line 178 in file lab7board.s
+Comment: s_left used once
+s_tail 0000050C
+
+Symbol: s_tail
+   Definitions
+      At line 185 in file lab7board.s
+   Uses
+      At line 183 in file lab7board.s
+Comment: s_tail used once
+sd_done 0000068C
+
+Symbol: sd_done
+   Definitions
+      At line 297 in file lab7board.s
+   Uses
+      At line 294 in file lab7board.s
+Comment: sd_done used once
+set_q 00000618
+
+Symbol: set_q
+   Definitions
+      At line 262 in file lab7board.s
+   Uses
+
+
+
+ARM Macro Assembler    Page 9 Alphabetic symbol ordering
+Relocatable symbols
+
+      At line 243 in file lab7board.s
+Comment: set_q used once
+set_sf 000005D8
+
+Symbol: set_sf
+   Definitions
+      At line 244 in file lab7board.s
+   Uses
+      At line 239 in file lab7board.s
+Comment: set_sf used once
+set_ss 000005F8
+
+Symbol: set_ss
+   Definitions
+      At line 253 in file lab7board.s
+   Uses
+      At line 241 in file lab7board.s
+Comment: set_ss used once
+unused 000003AF
+
+Symbol: unused
+   Definitions
+      At line 80 in file lab7board.s
+   Uses
+      At line 66 in file lab7board.s
+Comment: unused used once
+update_score 00000640
+
+Symbol: update_score
+   Definitions
+      At line 275 in file lab7board.s
+   Uses
+      At line 8 in file lab7board.s
+      At line 300 in file lab7board.s
+      At line 311 in file lab7board.s
+
+56 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+External symbols
+
+Illuminate_RGB_LED 00000000
+
+Symbol: Illuminate_RGB_LED
+   Definitions
+      At line 30 in file lab7board.s
+   Uses
+      At line 102 in file lab7board.s
+Comment: Illuminate_RGB_LED used once
+binary_conversion_score 00000000
+
+Symbol: binary_conversion_score
+   Definitions
+      At line 27 in file lab7board.s
+   Uses
+      At line 114 in file lab7board.s
+Comment: binary_conversion_score used once
+binary_conversion_time 00000000
+
+Symbol: binary_conversion_time
+   Definitions
+      At line 25 in file lab7board.s
+   Uses
+      At line 109 in file lab7board.s
+Comment: binary_conversion_time used once
+div_and_mod 00000000
+
+Symbol: div_and_mod
+   Definitions
+      At line 16 in file lab7board.s
+   Uses
+      At line 249 in file lab7board.s
+      At line 258 in file lab7board.s
+      At line 267 in file lab7board.s
+      At line 371 in file lab7board.s
+
+illuminateLEDs 00000000
+
+Symbol: illuminateLEDs
+   Definitions
+      At line 29 in file lab7board.s
+   Uses
+      At line 331 in file lab7board.s
+Comment: illuminateLEDs used once
+lvl_data 00000000
+
+Symbol: lvl_data
+   Definitions
+      At line 23 in file lab7board.s
+   Uses
+      None
+Comment: lvl_data unused
+output_character 00000000
+
+Symbol: output_character
+   Definitions
+      At line 15 in file lab7board.s
+   Uses
+      None
+Comment: output_character unused
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+External symbols
+
+output_string 00000000
+
+Symbol: output_string
+   Definitions
+      At line 14 in file lab7board.s
+   Uses
+      At line 104 in file lab7board.s
+      At line 106 in file lab7board.s
+      At line 111 in file lab7board.s
+      At line 123 in file lab7board.s
+      At line 135 in file lab7board.s
+
+p_life 00000000
+
+Symbol: p_life
+   Definitions
+      At line 21 in file lab7board.s
+   Uses
+      At line 327 in file lab7board.s
+      At line 332 in file lab7board.s
+
+p_status 00000000
+
+Symbol: p_status
+   Definitions
+      At line 20 in file lab7board.s
+   Uses
+      At line 324 in file lab7board.s
+      At line 358 in file lab7board.s
+
+q_status 00000000
+
+Symbol: q_status
+   Definitions
+      At line 19 in file lab7board.s
+   Uses
+      At line 268 in file lab7board.s
+      At line 307 in file lab7board.s
+
+random_base 00000000
+
+Symbol: random_base
+   Definitions
+      At line 26 in file lab7board.s
+   Uses
+      At line 360 in file lab7board.s
+Comment: random_base used once
+score 00000000
+
+Symbol: score
+   Definitions
+      At line 22 in file lab7board.s
+   Uses
+      At line 112 in file lab7board.s
+      At line 277 in file lab7board.s
+
+set_enemies_status 00000000
+
+Symbol: set_enemies_status
+
+
+
+ARM Macro Assembler    Page 3 Alphabetic symbol ordering
+External symbols
+
+   Definitions
+      At line 28 in file lab7board.s
+   Uses
+      At line 301 in file lab7board.s
+      At line 312 in file lab7board.s
+
+sf_status 00000000
+
+Symbol: sf_status
+   Definitions
+      At line 17 in file lab7board.s
+   Uses
+      At line 250 in file lab7board.s
+      At line 289 in file lab7board.s
+
+ss_status 00000000
+
+Symbol: ss_status
+   Definitions
+      At line 18 in file lab7board.s
+   Uses
+      At line 259 in file lab7board.s
+      At line 295 in file lab7board.s
+
+stopwatchcounter 00000000
+
+Symbol: stopwatchcounter
+   Definitions
+      At line 24 in file lab7board.s
+   Uses
+      At line 107 in file lab7board.s
+Comment: stopwatchcounter used once
+17 symbols
+407 symbols in table

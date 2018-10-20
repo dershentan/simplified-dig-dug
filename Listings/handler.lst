@@ -1,0 +1,1696 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000                 AREA             handler, CODE, READWRITE
+    2 00000000                 EXPORT           FIQ_Handler
+    3 00000000                 EXPORT           pause_flag
+    4 00000000                 IMPORT           interrupt_init
+    5 00000000                 IMPORT           read_character
+    6 00000000                 IMPORT           output_character
+    7 00000000                 IMPORT           output_string
+    8 00000000                 IMPORT           div_and_mod
+    9 00000000                 IMPORT           Display_board
+   10 00000000                 IMPORT           exitloopflag
+   11 00000000                 IMPORT           timers_start
+   12 00000000                 IMPORT           timers_restart
+   13 00000000                 IMPORT           timers_stop
+   14 00000000                 IMPORT           timers_pause
+   15 00000000                 IMPORT           stopwatchcounter
+   16 00000000                 IMPORT           Board_array
+   17 00000000                 IMPORT           p_status
+   18 00000000                 IMPORT           update_score
+   19 00000000                 IMPORT           s_died
+   20 00000000                 IMPORT           q_died
+   21 00000000                 IMPORT           p_died
+   22 00000000                 IMPORT           p_life
+   23 00000000                 IMPORT           lvl_data
+   24 00000000                 IMPORT           sf_status
+   25 00000000                 IMPORT           ss_status
+   26 00000000                 IMPORT           q_status
+   27 00000000                 IMPORT           move_enemy
+   28 00000000                 IMPORT           watchdog_init
+   29 00000000                 IMPORT           watchdog_start
+   30 00000000                 IMPORT           start_state
+   31 00000000                 IMPORT           pause_prompt
+   32 00000000                 IMPORT           Illuminate_RGB_LED
+   33 00000000         
+   34 00000000                 ALIGN
+   35 00000000 00000000 
+                       pause_state
+                               DCD              0x00000000
+   36 00000004 00000001 
+                       pause_flag
+                               DCD              0x00000001
+   37 00000008 00000001 
+                       s_flag  DCD              0x00000001
+   38 0000000C 00000000 
+                       direction_status_f
+                               DCD              0x00000000
+   39 00000010 00000000 
+                       direction_status_s
+                               DCD              0x00000000
+   40 00000014 00000000 
+                       direction_status_q
+                               DCD              0x00000000
+   41 00000018 0FFFFFFF 
+                       refresh_rate_flag
+                               DCD              0x0FFFFFFF
+   42 0000001C 00000000 
+                       direction_hit
+                               DCD              0x00000000
+   43 00000020                 ALIGN
+   44 00000020         
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+   45 00000020         FIQ_Handler
+   46 00000020 E92D5FFF        STMFD            SP!, {r0-r12, lr} 
+                                                            ; Save registers
+   47 00000024         
+   48 00000024         TIMER1I1                             ; Check for Timer1 
+                                                            Match Register 1 in
+                                                            terrupt
+   49 00000024 E59F073C        LDR              r0, =0xE0008000
+   50 00000028 E5901000        LDR              r1, [r0]
+   51 0000002C E2011002        BIC              r1, r1, #0xFFFFFFFD
+   52 00000030 E3310002        TEQ              r1, #2
+   53 00000034 0A00019D        BEQ              TM1I1
+   54 00000038         
+   55 00000038         TIMER1I2                             ; Check for Timer1 
+                                                            Match Register 2 in
+                                                            terrupt
+   56 00000038 E59F0728        LDR              r0, =0xE0008000
+   57 0000003C E5901000        LDR              r1, [r0]
+   58 00000040 E2011004        BIC              r1, r1, #0xFFFFFFFB
+   59 00000044 E3310004        TEQ              r1, #4
+   60 00000048 0A0001AB        BEQ              TM1I2
+   61 0000004C         
+   62 0000004C         UART0I                               ; Check for UART0 i
+                                                            nterrupt
+   63 0000004C E59F0718        LDR              r0, =0xE000C008
+   64 00000050 E5901000        LDR              r1, [r0]
+   65 00000054 E2011001        BIC              r1, r1, #0xFFFFFFFE
+   66 00000058 E3310000        TEQ              r1, #0
+   67 0000005C 1A000005        BNE              TIMER0I1
+   68 00000060 E59F0708        LDR              r0, =refresh_rate_flag
+   69 00000064 E5901000        LDR              r1, [r0]
+   70 00000068 E3310000        TEQ              r1, #0
+   71 0000006C 1A000025        BNE              READBYTE
+   72 00000070 EBFFFFFE        BL               read_character
+   73 00000074 EA0001B2        B                FIQ_Exit
+   74 00000078         
+   75 00000078         TIMER0I1                             ; Check for Timer0 
+                                                            Match Register 2 in
+                                                            terrupt
+   76 00000078 E59F06F4        LDR              r0, =0xE0004000
+   77 0000007C E5901000        LDR              r1, [r0]
+   78 00000080 E2011002        BIC              r1, r1, #0xFFFFFFFD
+   79 00000084 E3310002        TEQ              r1, #2
+   80 00000088 0A00011D        BEQ              TM0I1
+   81 0000008C         
+   82 0000008C         EINT1                                ; Check for EINT1 i
+                                                            nterrupt
+   83 0000008C E59F06E4        LDR              r0, =0xE01FC140
+   84 00000090 E5901000        LDR              r1, [r0]
+   85 00000094 E3110002        TST              r1, #2
+   86 00000098 0A0001A9        BEQ              FIQ_Exit
+   87 0000009C         
+   88 0000009C E92D5FFF        STMFD            SP!, {r0-r12, lr} 
+                                                            ; Save registers 
+   89 000000A0         
+   90 000000A0         ; Push button EINT1 Handling Code
+   91 000000A0 E59F46D4        LDR              r4, =pause_flag
+   92 000000A4 E5940000        LDR              r0, [r4]
+   93 000000A8 E3300001        TEQ              r0, #1
+
+
+
+ARM Macro Assembler    Page 3 
+
+
+   94 000000AC 0A000011        BEQ              eint1exit
+   95 000000B0 E59F46C8        LDR              r4, =pause_state
+   96 000000B4 E5940000        LDR              r0, [r4]
+   97 000000B8 E3300000        TEQ              r0, #0
+   98 000000BC 0A000003        BEQ              ispausestate
+   99 000000C0 E3A00000        MOV              r0, #0
+  100 000000C4 E5840000        STR              r0, [r4]
+  101 000000C8 EBFFFFFE        BL               timers_restart
+  102 000000CC EA000009        B                eint1exit
+  103 000000D0         
+  104 000000D0         ispausestate
+  105 000000D0 E3A00001        MOV              r0, #1
+  106 000000D4 E5840000        STR              r0, [r4]
+  107 000000D8 EBFFFFFE        BL               timers_pause
+  108 000000DC E3A0000C        MOV              r0, #0x0C
+  109 000000E0 EBFFFFFE        BL               output_character
+  110 000000E4 E59F4698        LDR              r4, =pause_prompt
+  111 000000E8 EBFFFFFE        BL               output_string
+  112 000000EC EBFFFFFE        BL               Display_board
+  113 000000F0 E3A00002        MOV              r0, #2
+  114 000000F4 EBFFFFFE        BL               Illuminate_RGB_LED
+  115 000000F8         
+  116 000000F8         eint1exit
+  117 000000F8         
+  118 000000F8 E8BD5FFF        LDMFD            SP!, {r0-r12, lr} 
+                                                            ; Restore registers
+                                                            
+  119 000000FC         
+  120 000000FC E3811002        ORR              r1, r1, #2  ; Clear Interrupt
+  121 00000100 E5801000        STR              r1, [r0]
+  122 00000104         
+  123 00000104 EA00018E        B                FIQ_Exit    ;end of EINT1
+  124 00000108         
+  125 00000108         READBYTE
+  126 00000108 E92D5FFF        STMFD            SP!, {r0-r12, lr} 
+                                                            ; Save registers
+  127 0000010C         
+  128 0000010C         ; UART0I Handling Code
+  129 0000010C         
+  130 0000010C EB00018E        BL               reset_rrf
+  131 00000110 EBFFFFFE        BL               read_character
+  132 00000114         
+  133 00000114         
+  134 00000114 E59F4664        LDR              r4, =pause_state ; set initial 
+                                                            state to 0 
+  135 00000118 E5D41000        LDRB             r1, [r4]
+  136 0000011C E3510001        CMP              r1 , #1
+  137 00000120 0A0000F5        BEQ              uart_exit
+  138 00000124         
+  139 00000124 E3500020        CMP              r0, #0x20   ;check if airbomb
+  140 00000128 0A000012        BEQ              Its_Space
+  141 0000012C         
+  142 0000012C E350000D        CMP              r0, #0x0D   ;check if enter
+  143 00000130 0A00000E        BEQ              Its_Enter
+  144 00000134         
+  145 00000134 E3500067        CMP              r0, #0x67   ;check if g
+  146 00000138 0A000008        BEQ              Its_g
+  147 0000013C         
+  148 0000013C E3500077        CMP              r0, #0X77   ;check if input is 
+
+
+
+ARM Macro Assembler    Page 4 
+
+
+                                                            up
+  149 00000140 0A00006C        BEQ              Its_U
+  150 00000144         
+  151 00000144 E3500073        CMP              r0, #0x73   ;check if input is 
+                                                            down side
+  152 00000148 0A00008A        BEQ              Its_D
+  153 0000014C         
+  154 0000014C E3500061        CMP              r0, #0x61   ;check if input is 
+                                                            left side
+  155 00000150 0A0000C0        BEQ              Its_L
+  156 00000154         
+  157 00000154 E3500064        CMP              r0, #0x64   ;check if input is 
+                                                            right side
+  158 00000158 0A0000A2        BEQ              Its_R
+  159 0000015C         
+  160 0000015C EA0000E6        B                uart_exit
+  161 00000160         
+  162 00000160         Its_g
+  163 00000160 E59F4620        LDR              r4, =start_state
+  164 00000164 E3A00001        MOV              r0, #1
+  165 00000168 E5840000        STR              r0, [r4]
+  166 0000016C EA0000E2        B                uart_exit
+  167 00000170         
+  168 00000170         Its_Enter
+  169 00000170 EBFFFFFE        BL               watchdog_start
+  170 00000174 EA0000E0        B                uart_exit
+  171 00000178         
+  172 00000178         Its_Space
+  173 00000178 E3A00001        MOV              r0, #1
+  174 0000017C EBFFFFFE        BL               Illuminate_RGB_LED
+  175 00000180 E59F4604        LDR              r4,= p_status
+  176 00000184 E5942000        LDR              r2, [r4]
+  177 00000188 E59F0600        LDR              r0,= Board_array
+  178 0000018C E7F01002        LDRB             r1, [r0, r2]!
+  179 00000190 E3510004        CMP              r1, #4      ;<
+  180 00000194 0A000007        BEQ              hit_left
+  181 00000198 E3510003        CMP              r1, #3      ;>
+  182 0000019C 0A000019        BEQ              hit_right
+  183 000001A0 E3510005        CMP              r1, #5      ;^
+  184 000001A4 0A00002B        BEQ              hit_top
+  185 000001A8 E3510006        CMP              r1, #6      ;v
+  186 000001AC 0A00003D        BEQ              hit_bot
+  187 000001B0 E1800000        ORR              r0, r0, r0
+  188 000001B4 EA0000D0        B                uart_exit
+  189 000001B8         
+  190 000001B8         hit_left
+  191 000001B8 E5F01001        LDRB             r1, [r0, #1]! ; check if left s
+                                                            ide is dirt/wall or
+                                                             enemy
+  192 000001BC E3510000        CMP              r1, #0
+  193 000001C0 1A000002        BNE              hit_l
+  194 000001C4 E3A0100A        MOV              r1, #10
+  195 000001C8 E5C01000        STRB             r1, [r0]
+  196 000001CC EAFFFFF9        B                hit_left
+  197 000001D0         hit_l
+  198 000001D0 E3510001        CMP              r1, #1
+  199 000001D4 0A000007        BEQ              l_mark
+  200 000001D8 E3510002        CMP              r1, #2
+  201 000001DC 0A000005        BEQ              l_mark
+
+
+
+ARM Macro Assembler    Page 5 
+
+
+  202 000001E0 E351000A        CMP              r1, #10
+  203 000001E4 0A000003        BEQ              l_mark
+  204 000001E8 E3510008        CMP              r1, #8
+  205 000001EC 02825001        ADDEQ            r5, r2, #1
+  206 000001F0 0BFFFFFE        BLEQ             s_died
+  207 000001F4 CBFFFFFE        BLGT             q_died
+  208 000001F8         l_mark
+  209 000001F8 E59F4594        LDR              r4, = direction_hit
+  210 000001FC E3A01001        MOV              r1, #1
+  211 00000200 E5841000        STR              r1, [r4]
+  212 00000204 EA0000BC        B                uart_exit
+  213 00000208         
+  214 00000208         hit_right
+  215 00000208 E5701001        LDRB             r1, [r0, #-1]! ; check if left 
+                                                            side is dirt/wall o
+                                                            r enemy
+  216 0000020C E3510000        CMP              r1, #0
+  217 00000210 1A000002        BNE              hit_r
+  218 00000214 E3A0100A        MOV              r1, #10
+  219 00000218 E5C01000        STRB             r1, [r0]
+  220 0000021C EAFFFFF9        B                hit_right
+  221 00000220         hit_r
+  222 00000220 E3510001        CMP              r1, #1
+  223 00000224 0A000007        BEQ              r_mark
+  224 00000228 E3510002        CMP              r1, #2
+  225 0000022C 0A000005        BEQ              r_mark
+  226 00000230 E351000A        CMP              r1, #10
+  227 00000234 0A000003        BEQ              r_mark
+  228 00000238 E3510008        CMP              r1, #8
+  229 0000023C 02425001        SUBEQ            r5, r2, #1
+  230 00000240 0BFFFFFE        BLEQ             s_died
+  231 00000244 CBFFFFFE        BLGT             q_died
+  232 00000248         r_mark
+  233 00000248 E59F4544        LDR              r4, = direction_hit
+  234 0000024C E3A01002        MOV              r1, #2
+  235 00000250 E5841000        STR              r1, [r4]
+  236 00000254 EA0000A8        B                uart_exit
+  237 00000258         
+  238 00000258         hit_top
+  239 00000258 E5701018        LDRB             r1, [r0, #-24]! ; check if left
+                                                             side is dirt/wall 
+                                                            or enemy
+  240 0000025C E3510000        CMP              r1, #0
+  241 00000260 1A000002        BNE              hit_t
+  242 00000264 E3A0100A        MOV              r1, #10
+  243 00000268 E5C01000        STRB             r1, [r0]
+  244 0000026C EAFFFFF9        B                hit_top
+  245 00000270         hit_t
+  246 00000270 E3510001        CMP              r1, #1
+  247 00000274 0A000007        BEQ              t_mark
+  248 00000278 E351000A        CMP              r1, #10
+  249 0000027C 0A000005        BEQ              t_mark
+  250 00000280 E3510002        CMP              r1, #2
+  251 00000284 0A000003        BEQ              t_mark
+  252 00000288 E3510008        CMP              r1, #8
+  253 0000028C 02425018        SUBEQ            r5, r2, #24
+  254 00000290 0BFFFFFE        BLEQ             s_died
+  255 00000294 CBFFFFFE        BLGT             q_died
+  256 00000298         t_mark
+
+
+
+ARM Macro Assembler    Page 6 
+
+
+  257 00000298 E59F44F4        LDR              r4, = direction_hit
+  258 0000029C E3A01003        MOV              r1, #3
+  259 000002A0 E5841000        STR              r1, [r4]
+  260 000002A4 EA000094        B                uart_exit
+  261 000002A8         
+  262 000002A8         hit_bot
+  263 000002A8 E5F01018        LDRB             r1, [r0, #24]! ; check if left 
+                                                            side is dirt/wall o
+                                                            r enemy
+  264 000002AC E3510000        CMP              r1, #0
+  265 000002B0 1A000002        BNE              hit_b
+  266 000002B4 E3A0100A        MOV              r1, #10
+  267 000002B8 E5C01000        STRB             r1, [r0]
+  268 000002BC EAFFFFF9        B                hit_bot
+  269 000002C0         hit_b
+  270 000002C0 E3510001        CMP              r1, #1
+  271 000002C4 0A000007        BEQ              b_mark
+  272 000002C8 E3510002        CMP              r1, #2
+  273 000002CC 0A000005        BEQ              b_mark
+  274 000002D0 E351000A        CMP              r1, #10
+  275 000002D4 0A000003        BEQ              b_mark
+  276 000002D8 E3510008        CMP              r1, #8
+  277 000002DC 02825018        ADDEQ            r5, r2, #24
+  278 000002E0 0BFFFFFE        BLEQ             s_died
+  279 000002E4 CBFFFFFE        BLGT             q_died
+  280 000002E8         b_mark
+  281 000002E8 E59F44A4        LDR              r4, = direction_hit
+  282 000002EC E3A01001        MOV              r1, #1
+  283 000002F0 E5841000        STR              r1, [r4]
+  284 000002F4 EA000080        B                uart_exit
+  285 000002F8         
+  286 000002F8         Its_U
+  287 000002F8 E59F448C        LDR              r4, =p_status
+  288 000002FC E5940000        LDR              r0, [r4]
+  289 00000300 E59F5488        LDR              r5, =Board_array
+  290 00000304 E7D51000        LDRB             r1, [r5, r0]
+  291 00000308 E3510005        CMP              r1, #5
+  292 0000030C 0A000002        BEQ              move_u
+  293 00000310 E3A02005        MOV              r2, #5
+  294 00000314 E7C52000        STRB             r2, [r5, r0]
+  295 00000318 EA000077        B                uart_exit
+  296 0000031C         move_u
+  297 0000031C E59F4468        LDR              r4,= p_status
+  298 00000320 E5940000        LDR              r0, [r4]
+  299 00000324 E2404018        SUB              r4, r0, #24
+  300 00000328 E3540030        CMP              r4, #48
+  301 0000032C DA000072        BLE              uart_exit
+  302 00000330 E59F5458        LDR              r5,= Board_array
+  303 00000334 E0855000        ADD              r5, r5, r0
+  304 00000338 E5551018        LDRB             r1, [r5, #-24]
+  305 0000033C E3510002        CMP              r1, #2
+  306 00000340 0A00006D        BEQ              uart_exit
+  307 00000344 E3510007        CMP              r1, #7
+  308 00000348 CBFFFFFE        BLGT             p_died
+  309 0000034C CA00006A        BGT              uart_exit
+  310 00000350 E3510001        CMP              r1, #1
+  311 00000354 0BFFFFFE        BLEQ             update_score
+  312 00000358 E3A01000        MOV              r1, #0
+  313 0000035C E5C51000        STRB             r1, [r5]
+
+
+
+ARM Macro Assembler    Page 7 
+
+
+  314 00000360 E3A01005        MOV              r1, #5
+  315 00000364 E5451018        STRB             r1, [r5, #-24]
+  316 00000368 E2400018        ADD              r0, r0, #-24
+  317 0000036C E59F4418        LDR              r4,= p_status
+  318 00000370 E5840000        STR              r0, [r4]
+  319 00000374 EA000060        B                uart_exit
+  320 00000378         Its_D
+  321 00000378 E59F440C        LDR              r4, =p_status
+  322 0000037C E5940000        LDR              r0, [r4]
+  323 00000380 E59F5408        LDR              r5, =Board_array
+  324 00000384 E7D51000        LDRB             r1, [r5, r0]
+  325 00000388 E3510006        CMP              r1, #6
+  326 0000038C 0A000002        BEQ              move_d
+  327 00000390 E3A02006        MOV              r2, #6
+  328 00000394 E7C52000        STRB             r2, [r5, r0]
+  329 00000398 EA000057        B                uart_exit
+  330 0000039C         move_d
+  331 0000039C E59F43E8        LDR              r4,= p_status
+  332 000003A0 E5940000        LDR              r0, [r4]
+  333 000003A4 E59F53E4        LDR              r5,= Board_array
+  334 000003A8 E0855000        ADD              r5, r5, r0
+  335 000003AC E5D51018        LDRB             r1, [r5, #24]
+  336 000003B0 E3510002        CMP              r1, #2
+  337 000003B4 0A000050        BEQ              uart_exit
+  338 000003B8 E3510007        CMP              r1, #7
+  339 000003BC CBFFFFFE        BLGT             p_died
+  340 000003C0 CA00004D        BGT              uart_exit
+  341 000003C4 E3510001        CMP              r1, #1
+  342 000003C8 0BFFFFFE        BLEQ             update_score
+  343 000003CC E3A01000        MOV              r1, #0
+  344 000003D0 E5C51000        STRB             r1, [r5]
+  345 000003D4 E3A01006        MOV              r1, #6
+  346 000003D8 E5C51018        STRB             r1, [r5, #24]
+  347 000003DC E2800018        ADD              r0, r0, #24
+  348 000003E0 E5840000        STR              r0, [r4]
+  349 000003E4 EA000044        B                uart_exit
+  350 000003E8         Its_R
+  351 000003E8 E59F439C        LDR              r4, =p_status
+  352 000003EC E5940000        LDR              r0, [r4]
+  353 000003F0 E59F5398        LDR              r5, =Board_array
+  354 000003F4 E7D51000        LDRB             r1, [r5, r0]
+  355 000003F8 E3510003        CMP              r1, #3
+  356 000003FC 0A000002        BEQ              move_r
+  357 00000400 E3A02003        MOV              r2, #3
+  358 00000404 E7C52000        STRB             r2, [r5, r0]
+  359 00000408 EA00003B        B                uart_exit
+  360 0000040C         move_r
+  361 0000040C E59F4378        LDR              r4,= p_status
+  362 00000410 E5940000        LDR              r0, [r4]
+  363 00000414 E59F5374        LDR              r5,= Board_array
+  364 00000418 E0855000        ADD              r5, r5, r0
+  365 0000041C E5551001        LDRB             r1, [r5, #-1]
+  366 00000420 E3510002        CMP              r1, #2
+  367 00000424 0A000034        BEQ              uart_exit
+  368 00000428 E3510007        CMP              r1, #7
+  369 0000042C CBFFFFFE        BLGT             p_died
+  370 00000430 CA000031        BGT              uart_exit
+  371 00000434 E3510001        CMP              r1, #1
+  372 00000438 0BFFFFFE        BLEQ             update_score
+
+
+
+ARM Macro Assembler    Page 8 
+
+
+  373 0000043C E3A01000        MOV              r1, #0
+  374 00000440 E5C51000        STRB             r1, [r5]
+  375 00000444 E3A01003        MOV              r1, #3
+  376 00000448 E5451001        STRB             r1, [r5, #-1]
+  377 0000044C E2400001        ADD              r0, r0, #-1
+  378 00000450 E5840000        STR              r0, [r4]
+  379 00000454 EA000028        B                uart_exit
+  380 00000458         Its_L
+  381 00000458 E59F432C        LDR              r4, =p_status
+  382 0000045C E5940000        LDR              r0, [r4]
+  383 00000460 E59F5328        LDR              r5, =Board_array
+  384 00000464 E7D51000        LDRB             r1, [r5, r0]
+  385 00000468 E3510004        CMP              r1, #4
+  386 0000046C 0A000002        BEQ              move_l
+  387 00000470 E3A02004        MOV              r2, #4
+  388 00000474 E7C52000        STRB             r2, [r5, r0]
+  389 00000478 EA00001F        B                uart_exit
+  390 0000047C         move_l
+  391 0000047C E59F4308        LDR              r4,= p_status
+  392 00000480 E5940000        LDR              r0, [r4]
+  393 00000484 E59F5304        LDR              r5,= Board_array
+  394 00000488 E0855000        ADD              r5, r5, r0
+  395 0000048C E5D51001        LDRB             r1, [r5, #1]
+  396 00000490 E3510002        CMP              r1, #2
+  397 00000494 0A000018        BEQ              uart_exit
+  398 00000498 E3510007        CMP              r1, #7
+  399 0000049C CBFFFFFE        BLGT             p_died
+  400 000004A0 CA000015        BGT              uart_exit
+  401 000004A4 E3510001        CMP              r1, #1
+  402 000004A8 0BFFFFFE        BLEQ             update_score
+  403 000004AC E3A01000        MOV              r1, #0
+  404 000004B0 E5C51000        STRB             r1, [r5]
+  405 000004B4 E3A01004        MOV              r1, #4
+  406 000004B8 E5C51001        STRB             r1, [r5, #1]
+  407 000004BC E2800001        ADD              r0, r0, #1
+  408 000004C0 E5840000        STR              r0, [r4]
+  409 000004C4 EA00000C        B                uart_exit
+  410 000004C8         update_lvl
+  411 000004C8 E59F42C8        LDR              r4,= sf_status
+  412 000004CC E3540000        CMP              r4, #0
+  413 000004D0 1A000009        BNE              uart_exit
+  414 000004D4 E59F42C0        LDR              r4,= ss_status
+  415 000004D8 E3540000        CMP              r4, #0
+  416 000004DC 1A000006        BNE              uart_exit
+  417 000004E0 E59F42B8        LDR              r4,= p_life
+  418 000004E4 E3540000        CMP              r4, #0
+  419 000004E8 1A000003        BNE              uart_exit
+  420 000004EC E59F42B0        LDR              r4,= lvl_data
+  421 000004F0 E5940000        LDR              r0, [r4]
+  422 000004F4 E2800001        ADD              r0, r0, #1
+  423 000004F8 E5840000        STR              r0,[r4]
+  424 000004FC         uart_exit
+  425 000004FC         
+  426 000004FC E8BD5FFF        LDMFD            SP!, {r0-r12, lr} 
+                                                            ; Restore registers
+                                                            
+  427 00000500 EA00008F        B                FIQ_Exit
+  428 00000504         
+  429 00000504         TM0I1
+
+
+
+ARM Macro Assembler    Page 9 
+
+
+  430 00000504 E92D5FFF        STMFD            SP!, {r0-r12, lr} 
+                                                            ; Save registers
+  431 00000508         
+  432 00000508 E59F4260        LDR              r4, =refresh_rate_flag
+  433 0000050C E3A00001        MOV              r0, #1
+  434 00000510 E5840000        STR              r0, [r4]
+  435 00000514         
+  436 00000514 E59F428C        LDR              r4, = s_flag
+  437 00000518 E5940000        LDR              r0, [r4]
+  438 0000051C E3500001        CMP              r0, #1
+  439 00000520 12800002        ADDNE            r0, r0, #2
+  440 00000524 15840000        STRNE            r0, [r4]
+  441 00000528 1A00001B        BNE              q_move
+  442 0000052C         sf_move
+  443 0000052C E59F4278        LDR              r4, = direction_status_f
+  444 00000530 E5941000        LDR              r1, [r4]
+  445 00000534 E59F425C        LDR              r4, = sf_status
+  446 00000538 E5942000        LDR              r2, [r4]
+  447 0000053C E3520000        CMP              r2, #0
+  448 00000540 0A000007        BEQ              ss_move
+  449 00000544 E59F5244        LDR              r5,= Board_array
+  450 00000548 E0855002        ADD              r5, r5, r2
+  451 0000054C E5D53000        LDRB             r3, [r5]
+  452 00000550 E3530008        CMP              r3, #8
+  453 00000554 0BFFFFFE        BLEQ             move_enemy
+  454 00000558 E5840000        STR              r0, [r4]
+  455 0000055C E59F4248        LDR              r4,=direction_status_f
+  456 00000560 E5841000        STR              r1,[r4]
+  457 00000564         ss_move
+  458 00000564 E59F4244        LDR              r4, = direction_status_s
+  459 00000568 E5941000        LDR              r1, [r4]
+  460 0000056C E59F4228        LDR              r4, = ss_status
+  461 00000570 E5942000        LDR              r2, [r4]
+  462 00000574 E3520000        CMP              r2, #0
+  463 00000578 0A000007        BEQ              q_move
+  464 0000057C E59F520C        LDR              r5,= Board_array
+  465 00000580 E0855002        ADD              r5, r5, r2
+  466 00000584 E5D53000        LDRB             r3, [r5]
+  467 00000588 E3530008        CMP              r3, #8
+  468 0000058C 0BFFFFFE        BLEQ             move_enemy
+  469 00000590 E5840000        STR              r0, [r4]
+  470 00000594 E59F4214        LDR              r4,=direction_status_s
+  471 00000598 E5841000        STR              r1,[r4]
+  472 0000059C         q_move
+  473 0000059C E59F4210        LDR              r4, = direction_status_q
+  474 000005A0 E5941000        LDR              r1, [r4]
+  475 000005A4 E59F420C        LDR              r4, = q_status
+  476 000005A8 E5942000        LDR              r2, [r4]
+  477 000005AC E3520000        CMP              r2, #0
+  478 000005B0 0A000007        BEQ              T1_done
+  479 000005B4 E59F51D4        LDR              r5,= Board_array
+  480 000005B8 E0855002        ADD              r5, r5, r2
+  481 000005BC E5D53000        LDRB             r3, [r5]
+  482 000005C0 E3530009        CMP              r3, #9
+  483 000005C4 0BFFFFFE        BLEQ             move_enemy
+  484 000005C8 E5840000        STR              r0, [r4]
+  485 000005CC E59F41E0        LDR              r4,=direction_status_q
+  486 000005D0 E5841000        STR              r1,[r4]
+  487 000005D4         ; TIMER0I1 Handling Code
+
+
+
+ARM Macro Assembler    Page 10 
+
+
+  488 000005D4         T1_done
+  489 000005D4 E59F41CC        LDR              r4, = s_flag
+  490 000005D8 E5940000        LDR              r0, [r4]
+  491 000005DC E2400001        SUB              r0, r0, #1
+  492 000005E0 E5840000        STR              r0, [r4]
+  493 000005E4 E3A0000C        MOV              r0, #0x0C
+  494 000005E8 EBFFFFFE        BL               output_character
+  495 000005EC EBFFFFFE        BL               Display_board
+  496 000005F0         
+  497 000005F0         
+  498 000005F0 E59F4194        LDR              r4,= p_status
+  499 000005F4 E5942000        LDR              r2, [r4]
+  500 000005F8 E59F0190        LDR              r0,= Board_array
+  501 000005FC E7F01002        LDRB             r1, [r0, r2]!
+  502 00000600 E59F418C        LDR              r4,= direction_hit
+  503 00000604 E5941000        LDR              r1,[r4]
+  504 00000608 E3510001        CMP              r1, #1
+  505 0000060C 0A000006        BEQ              bullet_left
+  506 00000610 E3510002        CMP              r1, #2
+  507 00000614 0A00000A        BEQ              bullet_right
+  508 00000618 E3510003        CMP              r1, #3
+  509 0000061C 0A00000E        BEQ              bullet_top
+  510 00000620 E3510004        CMP              r1, #4
+  511 00000624 0A000012        BEQ              bullet_bot
+  512 00000628 EA000017        B                T1_exit
+  513 0000062C         bullet_left
+  514 0000062C E5F01001        LDRB             r1, [r0, #1]! ; check if left s
+                                                            ide is dirt/wall or
+                                                             enemy
+  515 00000630 E351000A        CMP              r1, #10
+  516 00000634 1A000014        BNE              T1_exit
+  517 00000638 E3A01000        MOV              r1, #0
+  518 0000063C E5C01000        STRB             r1, [r0]
+  519 00000640 EAFFFFF9        B                bullet_left
+  520 00000644         bullet_right
+  521 00000644 E5701001        LDRB             r1, [r0, #-1]! ; check if left 
+                                                            side is dirt/wall o
+                                                            r enemy
+  522 00000648 E351000A        CMP              r1, #10
+  523 0000064C 1A00000E        BNE              T1_exit
+  524 00000650 E3A01000        MOV              r1, #0
+  525 00000654 E5C01000        STRB             r1, [r0]
+  526 00000658 EAFFFFF9        B                bullet_right
+  527 0000065C         bullet_top
+  528 0000065C E5701018        LDRB             r1, [r0, #-24]! ; check if left
+                                                             side is dirt/wall 
+                                                            or enemy
+  529 00000660 E351000A        CMP              r1, #10
+  530 00000664 1A000008        BNE              T1_exit
+  531 00000668 E3A01000        MOV              r1, #0
+  532 0000066C E5C01000        STRB             r1, [r0]
+  533 00000670 EAFFFFF9        B                bullet_top
+  534 00000674         bullet_bot
+  535 00000674 E5F01018        LDRB             r1, [r0, #24]! ; check if left 
+                                                            side is dirt/wall o
+                                                            r enemy
+  536 00000678 E351000A        CMP              r1, #10
+  537 0000067C 1A000002        BNE              T1_exit
+  538 00000680 E3A01000        MOV              r1, #0
+
+
+
+ARM Macro Assembler    Page 11 
+
+
+  539 00000684 E5C01000        STRB             r1, [r0]
+  540 00000688 EAFFFFF9        B                bullet_bot
+  541 0000068C         T1_exit
+  542 0000068C E59F4100        LDR              r4,= direction_hit
+  543 00000690 E3A01000        MOV              r1, #0
+  544 00000694 E5841000        STR              r1,[r4]
+  545 00000698         
+  546 00000698 E8BD5FFF        LDMFD            SP!, {r0-r12, lr} 
+                                                            ; Restore registers
+                                                            
+  547 0000069C         
+  548 0000069C E59F00D0        LDR              r0, =0xE0004000 ; Timer0 Interr
+                                                            upt registers
+  549 000006A0 E5901000        LDR              r1, [r0]
+  550 000006A4 E3811002        ORR              r1, r1, #2  ; Clear bit1
+  551 000006A8 E5801000        STR              r1, [r0]
+  552 000006AC         
+  553 000006AC EA000024        B                FIQ_Exit
+  554 000006B0         
+  555 000006B0         TM1I1
+  556 000006B0 E92D5FFF        STMFD            SP!, {r0-r12, lr} 
+                                                            ; Save registers
+  557 000006B4         
+  558 000006B4         ; TIMER1I1 Handling Code
+  559 000006B4 E59F4100        LDR              r4, =stopwatchcounter
+  560 000006B8 E5940000        LDR              r0, [r4]
+  561 000006BC E2800001        ADD              r0, r0, #1
+  562 000006C0 E5840000        STR              r0, [r4]
+  563 000006C4         
+  564 000006C4         ;Setup Match Register 1 for Timer1(MR1)
+  565 000006C4 E59F00F4        LDR              r0, =0xE000801C
+  566 000006C8 E5901000        LDR              r1, [r0]
+  567 000006CC E59F20F0        LDR              r2, =0x01194000
+  568 000006D0 E59F30F0        LDR              r3, =0x82BCC000
+  569 000006D4 E1310003        TEQ              r1, r3
+  570 000006D8 0A000001        BEQ              TM1I1_EXIT
+  571 000006DC E0811002        ADD              r1, r1, r2
+  572 000006E0 E5801000        STR              r1, [r0]
+  573 000006E4         TM1I1_EXIT
+  574 000006E4 E8BD5FFF        LDMFD            SP!, {r0-r12, lr} ; Restore reg
+                                                            isters and end of T
+                                                            M1I
+  575 000006E8         
+  576 000006E8 E59F0078        LDR              r0, =0xE0008000 ; Timer1 Interr
+                                                            upt registers
+  577 000006EC E5901000        LDR              r1, [r0]
+  578 000006F0 E3811002        ORR              r1, r1, #2  ; Clear bit1
+  579 000006F4 E5801000        STR              r1, [r0]
+  580 000006F8         
+  581 000006F8 EA000011        B                FIQ_Exit
+  582 000006FC         
+  583 000006FC         TM1I2
+  584 000006FC E92D5FFF        STMFD            SP!, {r0-r12, lr} 
+                                                            ; Save registers
+  585 00000700         
+  586 00000700         ; TIMER1I2 Handling Code
+  587 00000700 E59F40C4        LDR              r4, =exitloopflag
+  588 00000704 E3A00001        LDR              r0, =0x00000001
+  589 00000708 E5C40000        STRB             r0, [r4]
+
+
+
+ARM Macro Assembler    Page 12 
+
+
+  590 0000070C EBFFFFFE        BL               timers_stop
+  591 00000710 E59F4058        LDR              r4, =refresh_rate_flag 
+                                                            ;set rrf to max
+  592 00000714 E3E0020F        LDR              r0, =0x0FFFFFFF
+  593 00000718 E5840000        STR              r0, [r4]
+  594 0000071C E3A00004        MOV              r0, #4
+  595 00000720 EBFFFFFE        BL               Illuminate_RGB_LED
+  596 00000724 E59F0050        LDR              r0, =pause_flag
+  597 00000728 E3A01001        LDR              r1, =0x00000001
+  598 0000072C E5801000        STR              r1, [r0]
+  599 00000730         
+  600 00000730 E8BD5FFF        LDMFD            SP!, {r0-r12, lr} ; Restore reg
+                                                            isters and end of T
+                                                            M1I
+  601 00000734         
+  602 00000734 E59F002C        LDR              r0, =0xE0008000 ; Timer1 Interr
+                                                            upt registers
+  603 00000738 E5901000        LDR              r1, [r0]
+  604 0000073C E3811004        ORR              r1, r1, #4  ; Clear bit1
+  605 00000740 E5801000        STR              r1, [r0]
+  606 00000744         
+  607 00000744         FIQ_Exit
+  608 00000744 E8BD5FFF        LDMFD            SP!, {r0-r12, lr}
+  609 00000748 E25EF004        SUBS             pc, lr, #4
+  610 0000074C         
+  611 0000074C         reset_rrf
+  612 0000074C E92D5FFF        STMFD            r13!, {r0-r12, r14}
+  613 00000750         
+  614 00000750 E59F4018        LDR              r4, =refresh_rate_flag
+  615 00000754 E5940000        LDR              r0, [r4]
+  616 00000758 E2400001        SUB              r0, r0, #1
+  617 0000075C E5840000        STR              r0, [r4]
+  618 00000760         
+  619 00000760 E8BD5FFF        LDMFD            r13!, {r0-r12, r14}
+  620 00000764 E12FFF1E        BX               lr
+  621 00000768         
+  622 00000768                 END
+              E0008000 
+              E000C008 
+              00000000 
+              E0004000 
+              E01FC140 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+
+
+
+ARM Macro Assembler    Page 13 
+
+
+              E000801C 
+              01194000 
+              82BCC000 
+              00000000 
+Command Line: --debug --xref --diag_suppress=9931 --apcs=interwork --depend=.\o
+bjects\handler.d -o.\objects\handler.o -IC:\Keil_v5\ARM\RV31\INC -IC:\Keil_v5\A
+RM\CMSIS\Include -IC:\Keil_v5\ARM\Inc\Philips --predefine="__EVAL SETA 1" --pre
+define="__UVISION_VERSION SETA 522" --list=.\listings\handler.lst handler.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+EINT1 0000008C
+
+Symbol: EINT1
+   Definitions
+      At line 82 in file handler.s
+   Uses
+      None
+Comment: EINT1 unused
+FIQ_Exit 00000744
+
+Symbol: FIQ_Exit
+   Definitions
+      At line 607 in file handler.s
+   Uses
+      At line 73 in file handler.s
+      At line 86 in file handler.s
+      At line 123 in file handler.s
+      At line 427 in file handler.s
+      At line 553 in file handler.s
+      At line 581 in file handler.s
+
+FIQ_Handler 00000020
+
+Symbol: FIQ_Handler
+   Definitions
+      At line 45 in file handler.s
+   Uses
+      At line 2 in file handler.s
+Comment: FIQ_Handler used once
+Its_D 00000378
+
+Symbol: Its_D
+   Definitions
+      At line 320 in file handler.s
+   Uses
+      At line 152 in file handler.s
+Comment: Its_D used once
+Its_Enter 00000170
+
+Symbol: Its_Enter
+   Definitions
+      At line 168 in file handler.s
+   Uses
+      At line 143 in file handler.s
+Comment: Its_Enter used once
+Its_L 00000458
+
+Symbol: Its_L
+   Definitions
+      At line 380 in file handler.s
+   Uses
+      At line 155 in file handler.s
+Comment: Its_L used once
+Its_R 000003E8
+
+Symbol: Its_R
+   Definitions
+      At line 350 in file handler.s
+   Uses
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Relocatable symbols
+
+      At line 158 in file handler.s
+Comment: Its_R used once
+Its_Space 00000178
+
+Symbol: Its_Space
+   Definitions
+      At line 172 in file handler.s
+   Uses
+      At line 140 in file handler.s
+Comment: Its_Space used once
+Its_U 000002F8
+
+Symbol: Its_U
+   Definitions
+      At line 286 in file handler.s
+   Uses
+      At line 149 in file handler.s
+Comment: Its_U used once
+Its_g 00000160
+
+Symbol: Its_g
+   Definitions
+      At line 162 in file handler.s
+   Uses
+      At line 146 in file handler.s
+Comment: Its_g used once
+READBYTE 00000108
+
+Symbol: READBYTE
+   Definitions
+      At line 125 in file handler.s
+   Uses
+      At line 71 in file handler.s
+Comment: READBYTE used once
+T1_done 000005D4
+
+Symbol: T1_done
+   Definitions
+      At line 488 in file handler.s
+   Uses
+      At line 478 in file handler.s
+Comment: T1_done used once
+T1_exit 0000068C
+
+Symbol: T1_exit
+   Definitions
+      At line 541 in file handler.s
+   Uses
+      At line 512 in file handler.s
+      At line 516 in file handler.s
+      At line 523 in file handler.s
+      At line 530 in file handler.s
+      At line 537 in file handler.s
+
+TIMER0I1 00000078
+
+Symbol: TIMER0I1
+   Definitions
+      At line 75 in file handler.s
+
+
+
+ARM Macro Assembler    Page 3 Alphabetic symbol ordering
+Relocatable symbols
+
+   Uses
+      At line 67 in file handler.s
+Comment: TIMER0I1 used once
+TIMER1I1 00000024
+
+Symbol: TIMER1I1
+   Definitions
+      At line 48 in file handler.s
+   Uses
+      None
+Comment: TIMER1I1 unused
+TIMER1I2 00000038
+
+Symbol: TIMER1I2
+   Definitions
+      At line 55 in file handler.s
+   Uses
+      None
+Comment: TIMER1I2 unused
+TM0I1 00000504
+
+Symbol: TM0I1
+   Definitions
+      At line 429 in file handler.s
+   Uses
+      At line 80 in file handler.s
+Comment: TM0I1 used once
+TM1I1 000006B0
+
+Symbol: TM1I1
+   Definitions
+      At line 555 in file handler.s
+   Uses
+      At line 53 in file handler.s
+Comment: TM1I1 used once
+TM1I1_EXIT 000006E4
+
+Symbol: TM1I1_EXIT
+   Definitions
+      At line 573 in file handler.s
+   Uses
+      At line 570 in file handler.s
+Comment: TM1I1_EXIT used once
+TM1I2 000006FC
+
+Symbol: TM1I2
+   Definitions
+      At line 583 in file handler.s
+   Uses
+      At line 60 in file handler.s
+Comment: TM1I2 used once
+UART0I 0000004C
+
+Symbol: UART0I
+   Definitions
+      At line 62 in file handler.s
+   Uses
+      None
+Comment: UART0I unused
+
+
+
+ARM Macro Assembler    Page 4 Alphabetic symbol ordering
+Relocatable symbols
+
+b_mark 000002E8
+
+Symbol: b_mark
+   Definitions
+      At line 280 in file handler.s
+   Uses
+      At line 271 in file handler.s
+      At line 273 in file handler.s
+      At line 275 in file handler.s
+
+bullet_bot 00000674
+
+Symbol: bullet_bot
+   Definitions
+      At line 534 in file handler.s
+   Uses
+      At line 511 in file handler.s
+      At line 540 in file handler.s
+
+bullet_left 0000062C
+
+Symbol: bullet_left
+   Definitions
+      At line 513 in file handler.s
+   Uses
+      At line 505 in file handler.s
+      At line 519 in file handler.s
+
+bullet_right 00000644
+
+Symbol: bullet_right
+   Definitions
+      At line 520 in file handler.s
+   Uses
+      At line 507 in file handler.s
+      At line 526 in file handler.s
+
+bullet_top 0000065C
+
+Symbol: bullet_top
+   Definitions
+      At line 527 in file handler.s
+   Uses
+      At line 509 in file handler.s
+      At line 533 in file handler.s
+
+direction_hit 0000001C
+
+Symbol: direction_hit
+   Definitions
+      At line 42 in file handler.s
+   Uses
+      At line 209 in file handler.s
+      At line 233 in file handler.s
+      At line 257 in file handler.s
+      At line 281 in file handler.s
+      At line 502 in file handler.s
+      At line 542 in file handler.s
+
+
+
+
+ARM Macro Assembler    Page 5 Alphabetic symbol ordering
+Relocatable symbols
+
+direction_status_f 0000000C
+
+Symbol: direction_status_f
+   Definitions
+      At line 38 in file handler.s
+   Uses
+      At line 443 in file handler.s
+      At line 455 in file handler.s
+
+direction_status_q 00000014
+
+Symbol: direction_status_q
+   Definitions
+      At line 40 in file handler.s
+   Uses
+      At line 473 in file handler.s
+      At line 485 in file handler.s
+
+direction_status_s 00000010
+
+Symbol: direction_status_s
+   Definitions
+      At line 39 in file handler.s
+   Uses
+      At line 458 in file handler.s
+      At line 470 in file handler.s
+
+eint1exit 000000F8
+
+Symbol: eint1exit
+   Definitions
+      At line 116 in file handler.s
+   Uses
+      At line 94 in file handler.s
+      At line 102 in file handler.s
+
+handler 00000000
+
+Symbol: handler
+   Definitions
+      At line 1 in file handler.s
+   Uses
+      None
+Comment: handler unused
+hit_b 000002C0
+
+Symbol: hit_b
+   Definitions
+      At line 269 in file handler.s
+   Uses
+      At line 265 in file handler.s
+Comment: hit_b used once
+hit_bot 000002A8
+
+Symbol: hit_bot
+   Definitions
+      At line 262 in file handler.s
+   Uses
+      At line 186 in file handler.s
+
+
+
+ARM Macro Assembler    Page 6 Alphabetic symbol ordering
+Relocatable symbols
+
+      At line 268 in file handler.s
+
+hit_l 000001D0
+
+Symbol: hit_l
+   Definitions
+      At line 197 in file handler.s
+   Uses
+      At line 193 in file handler.s
+Comment: hit_l used once
+hit_left 000001B8
+
+Symbol: hit_left
+   Definitions
+      At line 190 in file handler.s
+   Uses
+      At line 180 in file handler.s
+      At line 196 in file handler.s
+
+hit_r 00000220
+
+Symbol: hit_r
+   Definitions
+      At line 221 in file handler.s
+   Uses
+      At line 217 in file handler.s
+Comment: hit_r used once
+hit_right 00000208
+
+Symbol: hit_right
+   Definitions
+      At line 214 in file handler.s
+   Uses
+      At line 182 in file handler.s
+      At line 220 in file handler.s
+
+hit_t 00000270
+
+Symbol: hit_t
+   Definitions
+      At line 245 in file handler.s
+   Uses
+      At line 241 in file handler.s
+Comment: hit_t used once
+hit_top 00000258
+
+Symbol: hit_top
+   Definitions
+      At line 238 in file handler.s
+   Uses
+      At line 184 in file handler.s
+      At line 244 in file handler.s
+
+ispausestate 000000D0
+
+Symbol: ispausestate
+   Definitions
+      At line 104 in file handler.s
+   Uses
+
+
+
+ARM Macro Assembler    Page 7 Alphabetic symbol ordering
+Relocatable symbols
+
+      At line 98 in file handler.s
+Comment: ispausestate used once
+l_mark 000001F8
+
+Symbol: l_mark
+   Definitions
+      At line 208 in file handler.s
+   Uses
+      At line 199 in file handler.s
+      At line 201 in file handler.s
+      At line 203 in file handler.s
+
+move_d 0000039C
+
+Symbol: move_d
+   Definitions
+      At line 330 in file handler.s
+   Uses
+      At line 326 in file handler.s
+Comment: move_d used once
+move_l 0000047C
+
+Symbol: move_l
+   Definitions
+      At line 390 in file handler.s
+   Uses
+      At line 386 in file handler.s
+Comment: move_l used once
+move_r 0000040C
+
+Symbol: move_r
+   Definitions
+      At line 360 in file handler.s
+   Uses
+      At line 356 in file handler.s
+Comment: move_r used once
+move_u 0000031C
+
+Symbol: move_u
+   Definitions
+      At line 296 in file handler.s
+   Uses
+      At line 292 in file handler.s
+Comment: move_u used once
+pause_flag 00000004
+
+Symbol: pause_flag
+   Definitions
+      At line 36 in file handler.s
+   Uses
+      At line 3 in file handler.s
+      At line 91 in file handler.s
+      At line 596 in file handler.s
+
+pause_state 00000000
+
+Symbol: pause_state
+   Definitions
+      At line 35 in file handler.s
+
+
+
+ARM Macro Assembler    Page 8 Alphabetic symbol ordering
+Relocatable symbols
+
+   Uses
+      At line 95 in file handler.s
+      At line 134 in file handler.s
+
+q_move 0000059C
+
+Symbol: q_move
+   Definitions
+      At line 472 in file handler.s
+   Uses
+      At line 441 in file handler.s
+      At line 463 in file handler.s
+
+r_mark 00000248
+
+Symbol: r_mark
+   Definitions
+      At line 232 in file handler.s
+   Uses
+      At line 223 in file handler.s
+      At line 225 in file handler.s
+      At line 227 in file handler.s
+
+refresh_rate_flag 00000018
+
+Symbol: refresh_rate_flag
+   Definitions
+      At line 41 in file handler.s
+   Uses
+      At line 68 in file handler.s
+      At line 432 in file handler.s
+      At line 591 in file handler.s
+      At line 614 in file handler.s
+
+reset_rrf 0000074C
+
+Symbol: reset_rrf
+   Definitions
+      At line 611 in file handler.s
+   Uses
+      At line 130 in file handler.s
+Comment: reset_rrf used once
+s_flag 00000008
+
+Symbol: s_flag
+   Definitions
+      At line 37 in file handler.s
+   Uses
+      At line 436 in file handler.s
+      At line 489 in file handler.s
+
+sf_move 0000052C
+
+Symbol: sf_move
+   Definitions
+      At line 442 in file handler.s
+   Uses
+      None
+Comment: sf_move unused
+
+
+
+ARM Macro Assembler    Page 9 Alphabetic symbol ordering
+Relocatable symbols
+
+ss_move 00000564
+
+Symbol: ss_move
+   Definitions
+      At line 457 in file handler.s
+   Uses
+      At line 448 in file handler.s
+Comment: ss_move used once
+t_mark 00000298
+
+Symbol: t_mark
+   Definitions
+      At line 256 in file handler.s
+   Uses
+      At line 247 in file handler.s
+      At line 249 in file handler.s
+      At line 251 in file handler.s
+
+uart_exit 000004FC
+
+Symbol: uart_exit
+   Definitions
+      At line 424 in file handler.s
+   Uses
+      At line 137 in file handler.s
+      At line 160 in file handler.s
+      At line 166 in file handler.s
+      At line 170 in file handler.s
+      At line 188 in file handler.s
+      At line 212 in file handler.s
+      At line 236 in file handler.s
+      At line 260 in file handler.s
+      At line 284 in file handler.s
+      At line 295 in file handler.s
+      At line 301 in file handler.s
+      At line 306 in file handler.s
+      At line 309 in file handler.s
+      At line 319 in file handler.s
+      At line 329 in file handler.s
+      At line 337 in file handler.s
+      At line 340 in file handler.s
+      At line 349 in file handler.s
+      At line 359 in file handler.s
+      At line 367 in file handler.s
+      At line 370 in file handler.s
+      At line 379 in file handler.s
+      At line 389 in file handler.s
+      At line 397 in file handler.s
+      At line 400 in file handler.s
+      At line 409 in file handler.s
+      At line 413 in file handler.s
+      At line 416 in file handler.s
+      At line 419 in file handler.s
+
+update_lvl 000004C8
+
+Symbol: update_lvl
+   Definitions
+      At line 410 in file handler.s
+
+
+
+ARM Macro Assembler    Page 10 Alphabetic symbol ordering
+Relocatable symbols
+
+   Uses
+      None
+Comment: update_lvl unused
+58 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+External symbols
+
+Board_array 00000000
+
+Symbol: Board_array
+   Definitions
+      At line 16 in file handler.s
+   Uses
+      At line 177 in file handler.s
+      At line 289 in file handler.s
+      At line 302 in file handler.s
+      At line 323 in file handler.s
+      At line 333 in file handler.s
+      At line 353 in file handler.s
+      At line 363 in file handler.s
+      At line 383 in file handler.s
+      At line 393 in file handler.s
+      At line 449 in file handler.s
+      At line 464 in file handler.s
+      At line 479 in file handler.s
+      At line 500 in file handler.s
+
+Display_board 00000000
+
+Symbol: Display_board
+   Definitions
+      At line 9 in file handler.s
+   Uses
+      At line 112 in file handler.s
+      At line 495 in file handler.s
+
+Illuminate_RGB_LED 00000000
+
+Symbol: Illuminate_RGB_LED
+   Definitions
+      At line 32 in file handler.s
+   Uses
+      At line 114 in file handler.s
+      At line 174 in file handler.s
+      At line 595 in file handler.s
+
+div_and_mod 00000000
+
+Symbol: div_and_mod
+   Definitions
+      At line 8 in file handler.s
+   Uses
+      None
+Comment: div_and_mod unused
+exitloopflag 00000000
+
+Symbol: exitloopflag
+   Definitions
+      At line 10 in file handler.s
+   Uses
+      At line 587 in file handler.s
+Comment: exitloopflag used once
+interrupt_init 00000000
+
+Symbol: interrupt_init
+   Definitions
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+External symbols
+
+      At line 4 in file handler.s
+   Uses
+      None
+Comment: interrupt_init unused
+lvl_data 00000000
+
+Symbol: lvl_data
+   Definitions
+      At line 23 in file handler.s
+   Uses
+      At line 420 in file handler.s
+Comment: lvl_data used once
+move_enemy 00000000
+
+Symbol: move_enemy
+   Definitions
+      At line 27 in file handler.s
+   Uses
+      At line 453 in file handler.s
+      At line 468 in file handler.s
+      At line 483 in file handler.s
+
+output_character 00000000
+
+Symbol: output_character
+   Definitions
+      At line 6 in file handler.s
+   Uses
+      At line 109 in file handler.s
+      At line 494 in file handler.s
+
+output_string 00000000
+
+Symbol: output_string
+   Definitions
+      At line 7 in file handler.s
+   Uses
+      At line 111 in file handler.s
+Comment: output_string used once
+p_died 00000000
+
+Symbol: p_died
+   Definitions
+      At line 21 in file handler.s
+   Uses
+      At line 308 in file handler.s
+      At line 339 in file handler.s
+      At line 369 in file handler.s
+      At line 399 in file handler.s
+
+p_life 00000000
+
+Symbol: p_life
+   Definitions
+      At line 22 in file handler.s
+   Uses
+      At line 417 in file handler.s
+Comment: p_life used once
+p_status 00000000
+
+
+
+ARM Macro Assembler    Page 3 Alphabetic symbol ordering
+External symbols
+
+
+Symbol: p_status
+   Definitions
+      At line 17 in file handler.s
+   Uses
+      At line 175 in file handler.s
+      At line 287 in file handler.s
+      At line 297 in file handler.s
+      At line 317 in file handler.s
+      At line 321 in file handler.s
+      At line 331 in file handler.s
+      At line 351 in file handler.s
+      At line 361 in file handler.s
+      At line 381 in file handler.s
+      At line 391 in file handler.s
+      At line 498 in file handler.s
+
+pause_prompt 00000000
+
+Symbol: pause_prompt
+   Definitions
+      At line 31 in file handler.s
+   Uses
+      At line 110 in file handler.s
+Comment: pause_prompt used once
+q_died 00000000
+
+Symbol: q_died
+   Definitions
+      At line 20 in file handler.s
+   Uses
+      At line 207 in file handler.s
+      At line 231 in file handler.s
+      At line 255 in file handler.s
+      At line 279 in file handler.s
+
+q_status 00000000
+
+Symbol: q_status
+   Definitions
+      At line 26 in file handler.s
+   Uses
+      At line 475 in file handler.s
+Comment: q_status used once
+read_character 00000000
+
+Symbol: read_character
+   Definitions
+      At line 5 in file handler.s
+   Uses
+      At line 72 in file handler.s
+      At line 131 in file handler.s
+
+s_died 00000000
+
+Symbol: s_died
+   Definitions
+      At line 19 in file handler.s
+   Uses
+
+
+
+ARM Macro Assembler    Page 4 Alphabetic symbol ordering
+External symbols
+
+      At line 206 in file handler.s
+      At line 230 in file handler.s
+      At line 254 in file handler.s
+      At line 278 in file handler.s
+
+sf_status 00000000
+
+Symbol: sf_status
+   Definitions
+      At line 24 in file handler.s
+   Uses
+      At line 411 in file handler.s
+      At line 445 in file handler.s
+
+ss_status 00000000
+
+Symbol: ss_status
+   Definitions
+      At line 25 in file handler.s
+   Uses
+      At line 414 in file handler.s
+      At line 460 in file handler.s
+
+start_state 00000000
+
+Symbol: start_state
+   Definitions
+      At line 30 in file handler.s
+   Uses
+      At line 163 in file handler.s
+Comment: start_state used once
+stopwatchcounter 00000000
+
+Symbol: stopwatchcounter
+   Definitions
+      At line 15 in file handler.s
+   Uses
+      At line 559 in file handler.s
+Comment: stopwatchcounter used once
+timers_pause 00000000
+
+Symbol: timers_pause
+   Definitions
+      At line 14 in file handler.s
+   Uses
+      At line 107 in file handler.s
+Comment: timers_pause used once
+timers_restart 00000000
+
+Symbol: timers_restart
+   Definitions
+      At line 12 in file handler.s
+   Uses
+      At line 101 in file handler.s
+Comment: timers_restart used once
+timers_start 00000000
+
+Symbol: timers_start
+   Definitions
+
+
+
+ARM Macro Assembler    Page 5 Alphabetic symbol ordering
+External symbols
+
+      At line 11 in file handler.s
+   Uses
+      None
+Comment: timers_start unused
+timers_stop 00000000
+
+Symbol: timers_stop
+   Definitions
+      At line 13 in file handler.s
+   Uses
+      At line 590 in file handler.s
+Comment: timers_stop used once
+update_score 00000000
+
+Symbol: update_score
+   Definitions
+      At line 18 in file handler.s
+   Uses
+      At line 311 in file handler.s
+      At line 342 in file handler.s
+      At line 372 in file handler.s
+      At line 402 in file handler.s
+
+watchdog_init 00000000
+
+Symbol: watchdog_init
+   Definitions
+      At line 28 in file handler.s
+   Uses
+      None
+Comment: watchdog_init unused
+watchdog_start 00000000
+
+Symbol: watchdog_start
+   Definitions
+      At line 29 in file handler.s
+   Uses
+      At line 169 in file handler.s
+Comment: watchdog_start used once
+29 symbols
+421 symbols in table

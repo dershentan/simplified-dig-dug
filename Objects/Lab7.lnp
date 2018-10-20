@@ -1,0 +1,11 @@
+--cpu ARM7TDMI
+".\objects\handler.o"
+".\objects\lab7.o"
+".\objects\lab7cwrapper.o"
+".\objects\library.o"
+".\objects\startup.o"
+".\objects\lab7board.o"
+--strict --scatter ".\Objects\Lab7.sct"
+--summary_stderr --info summarysizes --map --xref --callgraph --symbols
+--info sizes --info totals --info unused --info veneers
+--list ".\Listings\Lab7.map" -o .\Objects\Lab7.axf

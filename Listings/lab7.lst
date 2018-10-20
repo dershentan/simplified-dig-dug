@@ -1,0 +1,1036 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000                 AREA             interrupts, CODE, READWRITE
+    2 00000000                 EXPORT           lab7
+    3 00000000                 IMPORT           FIQ_Handler
+    4 00000000                 IMPORT           output_string
+    5 00000000                 IMPORT           output_character
+    6 00000000                 IMPORT           read_character
+    7 00000000                 IMPORT           read_string
+    8 00000000                 IMPORT           div_and_mod
+    9 00000000                 IMPORT           pin_connect_block_setup
+   10 00000000                 IMPORT           gpio_direction_register
+   11 00000000                 IMPORT           uart_init
+   12 00000000                 IMPORT           timers_start
+   13 00000000                 IMPORT           Board_array
+   14 00000000                 IMPORT           Board_array_initial
+   15 00000000                 IMPORT           Copy_board
+   16 00000000                 IMPORT           ADD_enemy_s
+   17 00000000                 IMPORT           ADD_enemy_q
+   18 00000000                 IMPORT           Display_board
+   19 00000000                 IMPORT           interrupt_init
+   20 00000000                 IMPORT           watchdog_init
+   21 00000000                 IMPORT           watchdog_start
+   22 00000000                 IMPORT           timer1_start
+   23 00000000                 IMPORT           timer1_stop
+   24 00000000                 IMPORT           timer0_speedup
+   25 00000000                 IMPORT           display_digit_on_7_seg
+   26 00000000                 IMPORT           illuminateLEDs
+   27 00000000                 IMPORT           Illuminate_RGB_LED
+   28 00000000                 IMPORT           pause_flag
+   29 00000000                 IMPORT           Score_S
+   30 00000000                 IMPORT           binary_conversion_score
+   31 00000000         
+   32 00000000                 EXPORT           pause_prompt
+   33 00000000                 EXPORT           start_state
+   34 00000000                 EXPORT           pause_state
+   35 00000000                 EXPORT           sf_status
+   36 00000000                 EXPORT           ss_status
+   37 00000000                 EXPORT           q_status
+   38 00000000                 EXPORT           p_status
+   39 00000000                 EXPORT           p_life
+   40 00000000                 EXPORT           score
+   41 00000000                 EXPORT           lvl_data
+   42 00000000                 EXPORT           exitloopflag
+   43 00000000                 EXPORT           stopwatchcounter
+   44 00000000                 EXPORT           random_base
+   45 00000000                 EXPORT           set_enemies_status
+   46 00000000         
+   47 00000000                 ALIGN
+   48 00000000         
+   49 00000000 57 65 6C 
+              63 6F 6D 
+              65 20 74 
+              6F 20 47 
+              61 6D 65 
+              20 44 69 
+              67 20 44 
+              75 67 0A 
+              0D 43 6F 
+              6E 74 72 
+              6F 6C 73 
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+              20 66 6F 
+              72 20 74 
+              68 65 20 
+              67 61 6D 
+              65 3A 0A 
+              0D 77 3A 
+              20 74 6F 
+              20 6D 6F 
+              76 65 20 
+              75 70 0A 
+              0D 73 3A 
+              20 74 6F 
+              20 6D 6F 
+              76 65 20 
+              64 6F 77 
+              6E 00    prompt  =                "Welcome to Game Dig Dug\n\rCon
+trols for the game:\n\rw: to move up\n\rs: to move down",0
+   50 00000050 0A 0D 61 
+              3A 20 74 
+              6F 20 6D 
+              6F 76 65 
+              20 6C 65 
+              66 74 0A 
+              0D 64 3A 
+              20 74 6F 
+              20 6D 6F 
+              76 65 20 
+              72 69 67 
+              68 74 0A 
+              0D 73 70 
+              61 63 65 
+              62 61 72 
+              3A 20 74 
+              6F 20 66 
+              69 72 65 
+              20 61 69 
+              72 70 75 
+              6D 70 0A 
+              0D 45 6E 
+              74 65 72 
+              3A 20 74 
+              6F 20 72 
+              65 73 74 
+              61 72 74 
+              20 67 61 
+              6D 65 00 prompt1 =                "\n\ra: to move left\n\rd: to m
+ove right\n\rspacebar: to fire airpump\n\rEnter: to restart game",0
+   51 000000A7 0A 0D 45 
+              78 74 65 
+              72 6E 61 
+              6C 20 49 
+              6E 74 65 
+              72 72 75 
+              70 74 20 
+              42 75 74 
+              74 6F 6E 
+              3A 20 74 
+              6F 20 70 
+              61 75 73 
+
+
+
+ARM Macro Assembler    Page 3 
+
+
+              65 20 74 
+              68 65 20 
+              67 61 6D 
+              65 0A 0D 
+              67 3A 20 
+              74 6F 20 
+              73 74 61 
+              72 74 20 
+              74 68 65 
+              20 67 61 
+              6D 65 00 prompt2 =                "\n\rExternal Interrupt Button:
+ to pause the game\n\rg: to start the game",0
+   52 000000EC 50 41 55 
+              53 45 0A 
+              0D 00    pause_prompt
+                               =                "PAUSE\n\r",0
+   53 000000F4 0A 0D 47 
+              61 6D 65 
+              20 4F 76 
+              65 72 21 
+              00       exitprompt
+                               =                "\n\rGame Over!",0
+   54 00000101 20 00   exitloopflag
+                               =                " ",0
+   55 00000103         
+   56 00000103 00              ALIGN
+   57 00000104         
+   58 00000104 00000000 
+                       sf_status
+                               DCD              0x00000000
+   59 00000108 00000000 
+                       ss_status
+                               DCD              0x00000000
+   60 0000010C 00000000 
+                       q_status
+                               DCD              0x00000000
+   61 00000110 00000000 
+                       enemies_status
+                               DCD              0x00000000
+   62 00000114 00000000 
+                       p_status
+                               DCD              0x00000000
+   63 00000118 00000000 
+                       p_life  DCD              0x00000000
+   64 0000011C 00000000 
+                       score   DCD              0x00000000
+   65 00000120 00000000 
+                       lvl_data
+                               DCD              0x00000000
+   66 00000124 00000000 
+                       pause_state
+                               DCD              0x00000000
+   67 00000128 00000000 
+                       start_state
+                               DCD              0x00000000
+   68 0000012C 00000000 
+                       stopwatchcounter
+                               DCD              0x00000000
+   69 00000130 00000000 
+
+
+
+ARM Macro Assembler    Page 4 
+
+
+                       random_base
+                               DCD              0x00000000
+   70 00000134                 ALIGN
+   71 00000134         
+   72 00000134         lab7
+   73 00000134 E92D4000        STMFD            sp!, {lr}
+   74 00000138 EBFFFFFE        BL               pin_connect_block_setup ;initia
+                                                            lize block and gpio
+                                                             and uart 
+   75 0000013C EBFFFFFE        BL               gpio_direction_register
+   76 00000140 EBFFFFFE        BL               uart_init
+   77 00000144 EBFFFFFE        BL               interrupt_init
+   78 00000148 EBFFFFFE        BL               watchdog_init
+   79 0000014C EBFFFFFE        BL               timer1_start ;timer1 for random
+                                                             position
+   80 00000150 E3A0000C        MOV              r0, #0x0C
+   81 00000154 EBFFFFFE        BL               output_character
+   82 00000158 E59F4218        LDR              r4, =prompt
+   83 0000015C EBFFFFFE        BL               output_string
+   84 00000160 E59F4214        LDR              r4, =prompt1
+   85 00000164 EBFFFFFE        BL               output_string
+   86 00000168 E59F4210        LDR              r4, =prompt2
+   87 0000016C EBFFFFFE        BL               output_string
+   88 00000170 E3A00006        MOV              r0, #6
+   89 00000174 EBFFFFFE        BL               Illuminate_RGB_LED ;set start l
+                                                            vl and lifes
+   90 00000178 E3A00000        MOV              r0, #0
+   91 0000017C EBFFFFFE        BL               display_digit_on_7_seg
+   92 00000180         startpageloop                        ;check if game star
+                                                            t, if not loop on t
+                                                            he rule page
+   93 00000180 E59F41FC        LDR              r4, =start_state
+   94 00000184 E5940000        LDR              r0, [r4]
+   95 00000188 E3500001        CMP              r0, #1
+   96 0000018C 0A00000B        BEQ              startpageexit
+   97 00000190 E59F41F0        LDR              r4, =stopwatchcounter
+   98 00000194 E5940000        LDR              r0, [r4]
+   99 00000198 E59F11EC        LDR              r1, =0x82BCC000
+  100 0000019C E1500001        CMP              r0, r1
+  101 000001A0 1AFFFFF6        BNE              startpageloop
+  102 000001A4 EBFFFFFE        BL               timer1_stop
+  103 000001A8 E59F41D8        LDR              r4, =stopwatchcounter
+  104 000001AC E5940000        LDR              r0, [r4]
+  105 000001B0 E3A01000        LDR              r1, =0x00000000
+  106 000001B4 E5801000        STR              r1, [r0]
+  107 000001B8 EBFFFFFE        BL               timer1_start
+  108 000001BC EAFFFFEF        B                startpageloop
+  109 000001C0         startpageexit
+  110 000001C0 E59F41C8        LDR              r4, =Board_array ; Make a initi
+                                                            al copy of Board_ar
+                                                            ray
+  111 000001C4 E59F51C8        LDR              r5, =Board_array_initial
+  112 000001C8 EBFFFFFE        BL               Copy_board
+  113 000001CC EBFFFFFE        BL               ADD_enemy_s ;adding enemy to bo
+                                                            ard
+  114 000001D0 EBFFFFFE        BL               ADD_enemy_q
+  115 000001D4 EBFFFFFE        BL               timer1_stop
+  116 000001D8 E59F41A8        LDR              r4, =stopwatchcounter
+  117 000001DC E3A00000        LDR              r0, =0x00000000
+
+
+
+ARM Macro Assembler    Page 5 
+
+
+  118 000001E0 E5840000        STR              r0, [r4]
+  119 000001E4         
+  120 000001E4 EBFFFFFE        BL               timers_start
+  121 000001E8         
+  122 000001E8 E59F41A8        LDR              r4, =pause_flag
+  123 000001EC E3A00000        MOV              r0, #0
+  124 000001F0 E5840000        STR              r0, [r4]
+  125 000001F4 EB000048        BL               set_level
+  126 000001F8 E59F419C        LDR              r4, =random_base
+  127 000001FC E3A00001        MOV              r0, #1
+  128 00000200 E5840000        STR              r0, [r4]
+  129 00000204 E59F4194        LDR              r4, =p_status
+  130 00000208 E3A000CA        MOV              r0, #202
+  131 0000020C E5840000        STR              r0, [r4]
+  132 00000210 E59F418C        LDR              r4, =p_life
+  133 00000214 E3A0000F        LDR              r0, =0x0000000F
+  134 00000218 E5840000        STR              r0, [r4]
+  135 0000021C EBFFFFFE        BL               illuminateLEDs
+  136 00000220 E59F4180        LDR              r4, =lvl_data
+  137 00000224 E3A00001        MOV              r0, #1
+  138 00000228 E5840000        STR              r0, [r4]
+  139 0000022C E59F4150        LDR              r4, =start_state
+  140 00000230 E3A00000        MOV              r0, #0
+  141 00000234 E5840000        STR              r0, [r4]
+  142 00000238 E59F416C        LDR              r4, =pause_state
+  143 0000023C E3A00000        MOV              r0, #0
+  144 00000240 E5840000        STR              r0, [r4]
+  145 00000244         
+  146 00000244         loop
+  147 00000244 E59F4164        LDR              r4, =enemies_status
+  148 00000248 E5940000        LDR              r0, [r4]
+  149 0000024C E3500003        CMP              r0, #3
+  150 00000250 1A000007        BNE              loop_i
+  151 00000254 EBFFFFFE        BL               timer0_speedup
+  152 00000258 EB00002F        BL               set_level
+  153 0000025C EB000039        BL               reset_enemies_status
+  154 00000260 E59F5128        LDR              r5, =Board_array ; Make a initi
+                                                            al copy of Board_ar
+                                                            ray
+  155 00000264 E59F4128        LDR              r4, =Board_array_initial
+  156 00000268 EBFFFFFE        BL               Copy_board
+  157 0000026C EB00001D        BL               reset_player
+  158 00000270 EA000004        B                newboard
+  159 00000274         loop_i
+  160 00000274 E59F4138        LDR              r4, =exitloopflag
+  161 00000278 E5D40000        LDRB             r0, [r4]
+  162 0000027C E3500001        CMP              r0, #1
+  163 00000280 0A000006        BEQ              lab7exit
+  164 00000284 EAFFFFEE        B                loop
+  165 00000288         
+  166 00000288         newboard                             ; create a new boar
+                                                            d on level up
+  167 00000288 E59F4100        LDR              r4, =Board_array ; Make a initi
+                                                            al copy of Board_ar
+                                                            ray
+  168 0000028C E59F5100        LDR              r5, =Board_array_initial
+  169 00000290 EBFFFFFE        BL               Copy_board
+  170 00000294 EBFFFFFE        BL               ADD_enemy_s
+  171 00000298 EBFFFFFE        BL               ADD_enemy_q
+
+
+
+ARM Macro Assembler    Page 6 
+
+
+  172 0000029C EAFFFFE8        B                loop
+  173 000002A0         
+  174 000002A0         lab7exit                             ;print end screen +
+                                                             final score with b
+                                                            onus for extra life
+                                                            
+  175 000002A0 E3A0000C        MOV              r0, #0x0C
+  176 000002A4 EBFFFFFE        BL               output_character
+  177 000002A8 E59F4108        LDR              r4, =exitprompt
+  178 000002AC EBFFFFFE        BL               output_string
+  179 000002B0 E59F4104        LDR              r4, =Score_S
+  180 000002B4 EBFFFFFE        BL               output_string
+  181 000002B8 E59F4100        LDR              r4, =score
+  182 000002BC E5940000        LDR              r0, [r4]
+  183 000002C0 E59F40DC        LDR              r4, =p_life
+  184 000002C4 E5941000        LDR              r1, [r4]
+  185 000002C8 E3510000        CMP              r1, #0
+  186 000002CC 0A000000        BEQ              telescore
+  187 000002D0 E2811001        ADD              r1, r1, #1
+  188 000002D4         telescore
+  189 000002D4 E3A020FA        LDR              r2, =0x000000FA
+  190 000002D8 E0030291        MUL              r3, r1, r2
+  191 000002DC E0800003        ADD              r0, r0, r3
+  192 000002E0 EBFFFFFE        BL               binary_conversion_score
+  193 000002E4         
+  194 000002E4 E12FFF1E        BX               lr
+  195 000002E8         
+  196 000002E8         
+  197 000002E8         
+  198 000002E8         reset_player
+  199 000002E8 E92D5FFF        STMFD            r13!, {r0-r12, r14}
+  200 000002EC         
+  201 000002EC E59F40AC        LDR              r4,= p_status
+  202 000002F0 E3A000CA        MOV              r0, #202
+  203 000002F4 E5840000        STR              r0, [r4]
+  204 000002F8         
+  205 000002F8 E8BD5FFF        LDMFD            r13!, {r0-r12, r14}
+  206 000002FC E12FFF1E        BX               lr
+  207 00000300         
+  208 00000300         set_enemies_status
+  209 00000300 E92D5FFF        STMFD            r13!, {r0-r12, r14}
+  210 00000304         
+  211 00000304 E59F40A4        LDR              r4, =enemies_status
+  212 00000308 E5940000        LDR              r0, [r4]
+  213 0000030C E2800001        ADD              r0, #1
+  214 00000310 E5C40000        STRB             r0, [r4]
+  215 00000314         
+  216 00000314 E8BD5FFF        LDMFD            r13!, {r0-r12, r14}
+  217 00000318 E12FFF1E        BX               lr
+  218 0000031C         
+  219 0000031C         set_level
+  220 0000031C E92D5FFF        STMFD            r13!, {r0-r12, r14}
+  221 00000320         
+  222 00000320 E59F4080        LDR              r4, =lvl_data
+  223 00000324 E5940000        LDR              r0, [r4]
+  224 00000328 E2800001        ADD              r0, #1
+  225 0000032C E5C40000        STRB             r0, [r4]
+  226 00000330 E3500009        CMP              r0, #9
+  227 00000334 DA000000        BLE              set_7_seg
+
+
+
+ARM Macro Assembler    Page 7 
+
+
+  228 00000338 E240000A        SUB              r0, #10
+  229 0000033C         set_7_seg
+  230 0000033C EBFFFFFE        BL               display_digit_on_7_seg
+  231 00000340         
+  232 00000340 E8BD5FFF        LDMFD            r13!, {r0-r12, r14}
+  233 00000344 E12FFF1E        BX               lr
+  234 00000348         
+  235 00000348         reset_enemies_status
+  236 00000348 E92D5FFF        STMFD            r13!, {r0-r12, r14}
+  237 0000034C         
+  238 0000034C E59F405C        LDR              r4, =enemies_status
+  239 00000350 E3A00000        MOV              r0, #0
+  240 00000354 E5840000        STR              r0, [r4]
+  241 00000358         
+  242 00000358 E8BD5FFF        LDMFD            r13!, {r0-r12, r14}
+  243 0000035C E12FFF1E        BX               lr
+  244 00000360         
+  245 00000360         
+  246 00000360         set_exitloopflag
+  247 00000360 E92D5FFC        STMFD            r13!, {r2-r12, r14}
+  248 00000364         
+  249 00000364 E59F4048        LDR              r4, =exitloopflag
+  250 00000368 E3A00000        LDR              r0, =0x00000000
+  251 0000036C E5C40000        STRB             r0, [r4]
+  252 00000370         
+  253 00000370 E8BD5FFC        LDMFD            r13!, {r2-r12, r14}
+  254 00000374 E12FFF1E        BX               lr
+  255 00000378         
+  256 00000378                 END
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              82BCC000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+Command Line: --debug --xref --diag_suppress=9931 --apcs=interwork --depend=.\o
+bjects\lab7.d -o.\objects\lab7.o -IC:\Keil_v5\ARM\RV31\INC -IC:\Keil_v5\ARM\CMS
+IS\Include -IC:\Keil_v5\ARM\Inc\Philips --predefine="__EVAL SETA 1" --predefine
+="__UVISION_VERSION SETA 522" --list=.\listings\lab7.lst lab7.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+enemies_status 00000110
+
+Symbol: enemies_status
+   Definitions
+      At line 61 in file lab7.s
+   Uses
+      At line 147 in file lab7.s
+      At line 211 in file lab7.s
+      At line 238 in file lab7.s
+
+exitloopflag 00000101
+
+Symbol: exitloopflag
+   Definitions
+      At line 54 in file lab7.s
+   Uses
+      At line 42 in file lab7.s
+      At line 160 in file lab7.s
+      At line 249 in file lab7.s
+
+exitprompt 000000F4
+
+Symbol: exitprompt
+   Definitions
+      At line 53 in file lab7.s
+   Uses
+      At line 177 in file lab7.s
+Comment: exitprompt used once
+interrupts 00000000
+
+Symbol: interrupts
+   Definitions
+      At line 1 in file lab7.s
+   Uses
+      None
+Comment: interrupts unused
+lab7 00000134
+
+Symbol: lab7
+   Definitions
+      At line 72 in file lab7.s
+   Uses
+      At line 2 in file lab7.s
+Comment: lab7 used once
+lab7exit 000002A0
+
+Symbol: lab7exit
+   Definitions
+      At line 174 in file lab7.s
+   Uses
+      At line 163 in file lab7.s
+Comment: lab7exit used once
+loop 00000244
+
+Symbol: loop
+   Definitions
+      At line 146 in file lab7.s
+   Uses
+      At line 164 in file lab7.s
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Relocatable symbols
+
+      At line 172 in file lab7.s
+
+loop_i 00000274
+
+Symbol: loop_i
+   Definitions
+      At line 159 in file lab7.s
+   Uses
+      At line 150 in file lab7.s
+Comment: loop_i used once
+lvl_data 00000120
+
+Symbol: lvl_data
+   Definitions
+      At line 65 in file lab7.s
+   Uses
+      At line 41 in file lab7.s
+      At line 136 in file lab7.s
+      At line 222 in file lab7.s
+
+newboard 00000288
+
+Symbol: newboard
+   Definitions
+      At line 166 in file lab7.s
+   Uses
+      At line 158 in file lab7.s
+Comment: newboard used once
+p_life 00000118
+
+Symbol: p_life
+   Definitions
+      At line 63 in file lab7.s
+   Uses
+      At line 39 in file lab7.s
+      At line 132 in file lab7.s
+      At line 183 in file lab7.s
+
+p_status 00000114
+
+Symbol: p_status
+   Definitions
+      At line 62 in file lab7.s
+   Uses
+      At line 38 in file lab7.s
+      At line 129 in file lab7.s
+      At line 201 in file lab7.s
+
+pause_prompt 000000EC
+
+Symbol: pause_prompt
+   Definitions
+      At line 52 in file lab7.s
+   Uses
+      At line 32 in file lab7.s
+Comment: pause_prompt used once
+pause_state 00000124
+
+Symbol: pause_state
+
+
+
+ARM Macro Assembler    Page 3 Alphabetic symbol ordering
+Relocatable symbols
+
+   Definitions
+      At line 66 in file lab7.s
+   Uses
+      At line 34 in file lab7.s
+      At line 142 in file lab7.s
+
+prompt 00000000
+
+Symbol: prompt
+   Definitions
+      At line 49 in file lab7.s
+   Uses
+      At line 82 in file lab7.s
+Comment: prompt used once
+prompt1 00000050
+
+Symbol: prompt1
+   Definitions
+      At line 50 in file lab7.s
+   Uses
+      At line 84 in file lab7.s
+Comment: prompt1 used once
+prompt2 000000A7
+
+Symbol: prompt2
+   Definitions
+      At line 51 in file lab7.s
+   Uses
+      At line 86 in file lab7.s
+Comment: prompt2 used once
+q_status 0000010C
+
+Symbol: q_status
+   Definitions
+      At line 60 in file lab7.s
+   Uses
+      At line 37 in file lab7.s
+Comment: q_status used once
+random_base 00000130
+
+Symbol: random_base
+   Definitions
+      At line 69 in file lab7.s
+   Uses
+      At line 44 in file lab7.s
+      At line 126 in file lab7.s
+
+reset_enemies_status 00000348
+
+Symbol: reset_enemies_status
+   Definitions
+      At line 235 in file lab7.s
+   Uses
+      At line 153 in file lab7.s
+Comment: reset_enemies_status used once
+reset_player 000002E8
+
+Symbol: reset_player
+   Definitions
+
+
+
+ARM Macro Assembler    Page 4 Alphabetic symbol ordering
+Relocatable symbols
+
+      At line 198 in file lab7.s
+   Uses
+      At line 157 in file lab7.s
+Comment: reset_player used once
+score 0000011C
+
+Symbol: score
+   Definitions
+      At line 64 in file lab7.s
+   Uses
+      At line 40 in file lab7.s
+      At line 181 in file lab7.s
+
+set_7_seg 0000033C
+
+Symbol: set_7_seg
+   Definitions
+      At line 229 in file lab7.s
+   Uses
+      At line 227 in file lab7.s
+Comment: set_7_seg used once
+set_enemies_status 00000300
+
+Symbol: set_enemies_status
+   Definitions
+      At line 208 in file lab7.s
+   Uses
+      At line 45 in file lab7.s
+Comment: set_enemies_status used once
+set_exitloopflag 00000360
+
+Symbol: set_exitloopflag
+   Definitions
+      At line 246 in file lab7.s
+   Uses
+      None
+Comment: set_exitloopflag unused
+set_level 0000031C
+
+Symbol: set_level
+   Definitions
+      At line 219 in file lab7.s
+   Uses
+      At line 125 in file lab7.s
+      At line 152 in file lab7.s
+
+sf_status 00000104
+
+Symbol: sf_status
+   Definitions
+      At line 58 in file lab7.s
+   Uses
+      At line 35 in file lab7.s
+Comment: sf_status used once
+ss_status 00000108
+
+Symbol: ss_status
+   Definitions
+      At line 59 in file lab7.s
+
+
+
+ARM Macro Assembler    Page 5 Alphabetic symbol ordering
+Relocatable symbols
+
+   Uses
+      At line 36 in file lab7.s
+Comment: ss_status used once
+start_state 00000128
+
+Symbol: start_state
+   Definitions
+      At line 67 in file lab7.s
+   Uses
+      At line 33 in file lab7.s
+      At line 93 in file lab7.s
+      At line 139 in file lab7.s
+
+startpageexit 000001C0
+
+Symbol: startpageexit
+   Definitions
+      At line 109 in file lab7.s
+   Uses
+      At line 96 in file lab7.s
+Comment: startpageexit used once
+startpageloop 00000180
+
+Symbol: startpageloop
+   Definitions
+      At line 92 in file lab7.s
+   Uses
+      At line 101 in file lab7.s
+      At line 108 in file lab7.s
+
+stopwatchcounter 0000012C
+
+Symbol: stopwatchcounter
+   Definitions
+      At line 68 in file lab7.s
+   Uses
+      At line 43 in file lab7.s
+      At line 97 in file lab7.s
+      At line 103 in file lab7.s
+      At line 116 in file lab7.s
+
+telescore 000002D4
+
+Symbol: telescore
+   Definitions
+      At line 188 in file lab7.s
+   Uses
+      At line 186 in file lab7.s
+Comment: telescore used once
+33 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+External symbols
+
+ADD_enemy_q 00000000
+
+Symbol: ADD_enemy_q
+   Definitions
+      At line 17 in file lab7.s
+   Uses
+      At line 114 in file lab7.s
+      At line 171 in file lab7.s
+
+ADD_enemy_s 00000000
+
+Symbol: ADD_enemy_s
+   Definitions
+      At line 16 in file lab7.s
+   Uses
+      At line 113 in file lab7.s
+      At line 170 in file lab7.s
+
+Board_array 00000000
+
+Symbol: Board_array
+   Definitions
+      At line 13 in file lab7.s
+   Uses
+      At line 110 in file lab7.s
+      At line 154 in file lab7.s
+      At line 167 in file lab7.s
+
+Board_array_initial 00000000
+
+Symbol: Board_array_initial
+   Definitions
+      At line 14 in file lab7.s
+   Uses
+      At line 111 in file lab7.s
+      At line 155 in file lab7.s
+      At line 168 in file lab7.s
+
+Copy_board 00000000
+
+Symbol: Copy_board
+   Definitions
+      At line 15 in file lab7.s
+   Uses
+      At line 112 in file lab7.s
+      At line 156 in file lab7.s
+      At line 169 in file lab7.s
+
+Display_board 00000000
+
+Symbol: Display_board
+   Definitions
+      At line 18 in file lab7.s
+   Uses
+      None
+Comment: Display_board unused
+FIQ_Handler 00000000
+
+Symbol: FIQ_Handler
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+External symbols
+
+   Definitions
+      At line 3 in file lab7.s
+   Uses
+      None
+Comment: FIQ_Handler unused
+Illuminate_RGB_LED 00000000
+
+Symbol: Illuminate_RGB_LED
+   Definitions
+      At line 27 in file lab7.s
+   Uses
+      At line 89 in file lab7.s
+Comment: Illuminate_RGB_LED used once
+Score_S 00000000
+
+Symbol: Score_S
+   Definitions
+      At line 29 in file lab7.s
+   Uses
+      At line 179 in file lab7.s
+Comment: Score_S used once
+binary_conversion_score 00000000
+
+Symbol: binary_conversion_score
+   Definitions
+      At line 30 in file lab7.s
+   Uses
+      At line 192 in file lab7.s
+Comment: binary_conversion_score used once
+display_digit_on_7_seg 00000000
+
+Symbol: display_digit_on_7_seg
+   Definitions
+      At line 25 in file lab7.s
+   Uses
+      At line 91 in file lab7.s
+      At line 230 in file lab7.s
+
+div_and_mod 00000000
+
+Symbol: div_and_mod
+   Definitions
+      At line 8 in file lab7.s
+   Uses
+      None
+Comment: div_and_mod unused
+gpio_direction_register 00000000
+
+Symbol: gpio_direction_register
+   Definitions
+      At line 10 in file lab7.s
+   Uses
+      At line 75 in file lab7.s
+Comment: gpio_direction_register used once
+illuminateLEDs 00000000
+
+Symbol: illuminateLEDs
+   Definitions
+      At line 26 in file lab7.s
+
+
+
+ARM Macro Assembler    Page 3 Alphabetic symbol ordering
+External symbols
+
+   Uses
+      At line 135 in file lab7.s
+Comment: illuminateLEDs used once
+interrupt_init 00000000
+
+Symbol: interrupt_init
+   Definitions
+      At line 19 in file lab7.s
+   Uses
+      At line 77 in file lab7.s
+Comment: interrupt_init used once
+output_character 00000000
+
+Symbol: output_character
+   Definitions
+      At line 5 in file lab7.s
+   Uses
+      At line 81 in file lab7.s
+      At line 176 in file lab7.s
+
+output_string 00000000
+
+Symbol: output_string
+   Definitions
+      At line 4 in file lab7.s
+   Uses
+      At line 83 in file lab7.s
+      At line 85 in file lab7.s
+      At line 87 in file lab7.s
+      At line 178 in file lab7.s
+      At line 180 in file lab7.s
+
+pause_flag 00000000
+
+Symbol: pause_flag
+   Definitions
+      At line 28 in file lab7.s
+   Uses
+      At line 122 in file lab7.s
+Comment: pause_flag used once
+pin_connect_block_setup 00000000
+
+Symbol: pin_connect_block_setup
+   Definitions
+      At line 9 in file lab7.s
+   Uses
+      At line 74 in file lab7.s
+Comment: pin_connect_block_setup used once
+read_character 00000000
+
+Symbol: read_character
+   Definitions
+      At line 6 in file lab7.s
+   Uses
+      None
+Comment: read_character unused
+read_string 00000000
+
+Symbol: read_string
+
+
+
+ARM Macro Assembler    Page 4 Alphabetic symbol ordering
+External symbols
+
+   Definitions
+      At line 7 in file lab7.s
+   Uses
+      None
+Comment: read_string unused
+timer0_speedup 00000000
+
+Symbol: timer0_speedup
+   Definitions
+      At line 24 in file lab7.s
+   Uses
+      At line 151 in file lab7.s
+Comment: timer0_speedup used once
+timer1_start 00000000
+
+Symbol: timer1_start
+   Definitions
+      At line 22 in file lab7.s
+   Uses
+      At line 79 in file lab7.s
+      At line 107 in file lab7.s
+
+timer1_stop 00000000
+
+Symbol: timer1_stop
+   Definitions
+      At line 23 in file lab7.s
+   Uses
+      At line 102 in file lab7.s
+      At line 115 in file lab7.s
+
+timers_start 00000000
+
+Symbol: timers_start
+   Definitions
+      At line 12 in file lab7.s
+   Uses
+      At line 120 in file lab7.s
+Comment: timers_start used once
+uart_init 00000000
+
+Symbol: uart_init
+   Definitions
+      At line 11 in file lab7.s
+   Uses
+      At line 76 in file lab7.s
+Comment: uart_init used once
+watchdog_init 00000000
+
+Symbol: watchdog_init
+   Definitions
+      At line 20 in file lab7.s
+   Uses
+      At line 78 in file lab7.s
+Comment: watchdog_init used once
+watchdog_start 00000000
+
+Symbol: watchdog_start
+   Definitions
+
+
+
+ARM Macro Assembler    Page 5 Alphabetic symbol ordering
+External symbols
+
+      At line 21 in file lab7.s
+   Uses
+      None
+Comment: watchdog_start unused
+28 symbols
+395 symbols in table

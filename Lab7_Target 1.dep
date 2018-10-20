@@ -1,0 +1,7 @@
+Dependencies for Project 'Lab7', Target 'Target 1': (DO NOT MODIFY !)
+F (.\handler.s)(0x590376A5)(--cpu ARM7TDMI --pd "__EVAL SETA 1" -g --apcs=interwork -I "C:\Keil\ARM\INC" -I "C:\Keil\ARM\INC\Philips" --list ".\Listings\handler.lst" --xref -o ".\Objects\handler.o")
+F (.\lab7.s)(0x590376A5)(--cpu ARM7TDMI --pd "__EVAL SETA 1" -g --apcs=interwork -I "C:\Keil\ARM\INC" -I "C:\Keil\ARM\INC\Philips" --list ".\Listings\lab7.lst" --xref -o ".\Objects\lab7.o")
+F (.\lab7cwrapper.c)(0x590376A5)(-c --cpu ARM7TDMI -D__EVAL -g -O0 --apcs=interwork --split_sections -I "C:\Keil\ARM\INC" -I "C:\Keil\ARM\INC\Philips" -o ".\Objects\lab7cwrapper.o" --omf_browse ".\Objects\lab7cwrapper.crf" --depend ".\Objects\lab7cwrapper.d")
+F (.\library.s)(0x590376A5)(--cpu ARM7TDMI --pd "__EVAL SETA 1" -g --apcs=interwork -I "C:\Keil\ARM\INC" -I "C:\Keil\ARM\INC\Philips" --list ".\Listings\library.lst" --xref -o ".\Objects\library.o")
+F (.\Startup.s)(0x590376A5)(--cpu ARM7TDMI --pd "__EVAL SETA 1" -g --apcs=interwork -I "C:\Keil\ARM\INC" -I "C:\Keil\ARM\INC\Philips" --list ".\Listings\Startup.lst" --xref -o ".\Objects\Startup.o")
+F (.\lab7board.s)(0x590376A5)(--cpu ARM7TDMI --pd "__EVAL SETA 1" -g --apcs=interwork -I "C:\Keil\ARM\INC" -I "C:\Keil\ARM\INC\Philips" --list ".\Listings\lab7board.lst" --xref -o ".\Objects\lab7board.o")
